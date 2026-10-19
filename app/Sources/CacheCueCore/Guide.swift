@@ -163,7 +163,7 @@ public enum Guide {
                 "With several sessions open, the limits are your account's; the clock and the advice belong to the session about to lose a cache worth keeping, or else to the one that last did something.",
                 "A dot inside the crescent: some session is waiting for your permission or your reply. In the list it carries a raised hand.",
                 "The figure beside the snowflake is what a session rewrites if its cache goes cold. A session already cold says what resuming it rewrites.",
-                "A session's switch lets CacheCue run /compact for you once that session sits idle with about 5 minutes of cache left. Compacting drops detail and cannot be undone, so it is off until you turn it on.",
+                "Each session card has a choice for when its cache is about to go cold. Leave it; keep it warm, where CacheCue rereads the cache with a one-line request about 3 minutes before it runs out, up to 3 times in a row, adding nothing to the conversation; or compact, where CacheCue runs /compact for you once the session sits idle with about 5 minutes of cache left, which drops detail and cannot be undone. Both cost a little, so neither is on until you choose it. Where Claude Code compacts an idle terminal session itself, the card says so and CacheCue stays out of it.",
             ],
             takeaway: "No dot, nothing to do. A dot means open the window and read the card."),
     ]
@@ -253,7 +253,7 @@ public enum Guide {
                 "同时开着多个会话时,额度是整个账号的;时钟和建议属于缓存快要变冷、值得保住的那个会话,没有这样的会话时属于最近有动静的那个。",
                 "月牙里的圆点:有会话在等你批准或回复。在列表里,那个会话带一个举手的图标。",
                 "会话旁边雪花后的数字,是它的缓存冷掉后要重写的量。已经冷掉的会话会写明恢复它要重写多少。",
-                "会话卡上的开关可以让 CacheCue 在该会话空闲、缓存只剩约 5 分钟时替你运行 /compact。压缩会丢掉细节且无法撤销,所以要你自己打开。",
+                "会话卡上可以选缓存快变冷时怎么办:不管;保温,CacheCue 在缓存到期前约 3 分钟发一条一句话的请求把缓存读一遍,最多连续 3 次,对话里不多出任何内容;或压缩,该会话空闲、缓存只剩约 5 分钟时替你运行 /compact,会丢掉细节且无法撤销。两者都要花一点钱,所以要你自己选。Claude Code 会在空闲时自己压缩的终端会话,卡片上会写明,CacheCue 不插手。",
             ],
             takeaway: "没有圆点就不用管;有圆点就点开窗口看卡片。"),
     ]
@@ -343,7 +343,7 @@ public enum Guide {
                 "同時開著多個工作階段時,額度是整個帳號的;時鐘和建議屬於快取快要變冷、值得保住的那個工作階段,沒有這樣的工作階段時屬於最近有動靜的那個。",
                 "月牙裡的圓點:有工作階段在等你批准或回覆。在清單裡,那個工作階段帶一個舉手的圖示。",
                 "工作階段旁邊雪花後的數字,是它的快取冷掉後要重寫的量。已經冷掉的工作階段會寫明恢復它要重寫多少。",
-                "工作階段卡片上的開關可以讓 CacheCue 在該工作階段閒置、快取只剩約 5 分鐘時替你執行 /compact。壓縮會丟掉細節且無法復原,所以要你自己開啟。",
+                "工作階段卡片上可以選快取快變冷時怎麼辦:不管;保溫,CacheCue 在快取到期前約 3 分鐘送出一句話的請求把快取讀一遍,最多連續 3 次,對話裡不多出任何內容;或壓縮,該工作階段閒置、快取只剩約 5 分鐘時替你執行 /compact,會丟掉細節且無法復原。兩者都要花一點錢,所以要你自己選。Claude Code 會在閒置時自行壓縮的終端機工作階段,卡片上會寫明,CacheCue 不插手。",
             ],
             takeaway: "沒有圓點就不用管;有圓點就點開視窗看卡片。"),
     ]

@@ -134,6 +134,49 @@ public struct SessionState: Codable, Equatable {
         }
     }
 
+    /// A read of the cache the app asked for to keep it warm, which the cache served.
+    public struct Warm: Codable, Equatable {
+        /// Epoch seconds: the cache lives another lifetime from here.
+        public var at: Double
+        public var request: String
+        /// Tokens the cache served.
+        public var read: Double?
+        /// Reads in a row since the main conversation last moved.
+        public var count: Int
+
+        public init(at: Double, request: String, read: Double? = nil, count: Int) {
+            self.at = at
+            self.request = request
+            self.read = read
+            self.count = count
+        }
+    }
+
+    /// A keep-warm read that did not keep anything warm: `cold` when the cache had already
+    /// gone, an API error's kind, or `unavailable` where Claude Code cannot make the read.
+    public struct WarmFailure: Codable, Equatable {
+        public var at: Double
+        public var request: String
+        public var reason: String?
+
+        public init(at: Double, request: String, reason: String? = nil) {
+            self.at = at
+            self.request = request
+            self.reason = reason
+        }
+    }
+
+    /// Claude Code compacts this terminal session itself once it sits idle, at this size and above.
+    public struct IdleCompact: Codable, Equatable {
+        public var minTokens: Double
+
+        public init(minTokens: Double) { self.minTokens = minTokens }
+
+        enum CodingKeys: String, CodingKey {
+            case minTokens = "min_tokens"
+        }
+    }
+
     public var sessionID: String
     public var state: String
     /// Epoch seconds.
@@ -144,10 +187,14 @@ public struct SessionState: Codable, Equatable {
     public var accepts: [String]? = nil
     public var compact: Compaction? = nil
     public var compactFailed: Failure? = nil
+    public var warm: Warm? = nil
+    public var warmFailed: WarmFailure? = nil
+    public var idleCompact: IdleCompact? = nil
 
     public init(
         sessionID: String, state: String, at: Double, turns: Int? = nil, accepts: [String]? = nil,
-        compact: Compaction? = nil, compactFailed: Failure? = nil
+        compact: Compaction? = nil, compactFailed: Failure? = nil, warm: Warm? = nil, warmFailed: WarmFailure? = nil,
+        idleCompact: IdleCompact? = nil
     ) {
         self.sessionID = sessionID
         self.state = state
@@ -156,12 +203,17 @@ public struct SessionState: Codable, Equatable {
         self.accepts = accepts
         self.compact = compact
         self.compactFailed = compactFailed
+        self.warm = warm
+        self.warmFailed = warmFailed
+        self.idleCompact = idleCompact
     }
 
     enum CodingKeys: String, CodingKey {
-        case state, at, turns, accepts, compact
+        case state, at, turns, accepts, compact, warm
         case sessionID = "session_id"
         case compactFailed = "compact_failed"
+        case warmFailed = "warm_failed"
+        case idleCompact = "idle_compact"
     }
 }
 
@@ -169,6 +221,10 @@ public struct SessionState: Codable, Equatable {
 /// (`<session_id>.request.json`). The plugin reads it; only the app writes and removes it.
 public struct SessionRequest: Codable, Equatable {
     public static let compact = "compact"
+    /// Read the cache once, so that it lives another lifetime; nothing is added to the conversation.
+    public static let warm = "warm"
+    /// In a plugin's `accepts`: a compaction asked for may say what the summary should keep.
+    public static let instructions = "instructions"
 
     public var v = 1
     public var sessionID: String
@@ -177,16 +233,19 @@ public struct SessionRequest: Codable, Equatable {
     public var id: String
     /// Epoch seconds.
     public var at: Double
+    /// For a compaction: what the summary should keep.
+    public var instructions: String? = nil
 
-    public init(sessionID: String, action: String, id: String, at: Double) {
+    public init(sessionID: String, action: String, id: String, at: Double, instructions: String? = nil) {
         self.sessionID = sessionID
         self.action = action
         self.id = id
         self.at = at
+        self.instructions = instructions
     }
 
     enum CodingKeys: String, CodingKey {
-        case v, action, id, at
+        case v, action, id, at, instructions
         case sessionID = "session_id"
     }
 }

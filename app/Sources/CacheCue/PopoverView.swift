@@ -190,6 +190,47 @@ struct SwitchRow: View {
     }
 }
 
+/// A few options side by side, one chosen. Drawn rather than a system control, so the off-screen
+/// render shows it as it looks.
+struct ChoiceRow<Value: Hashable>: View {
+    let title: String
+    let options: [(value: Value, label: String)]
+    @Binding var selection: Value
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title).font(.rounded(11, .semibold)).lineLimit(1).minimumScaleFactor(0.8)
+            HStack(spacing: 2) {
+                ForEach(options, id: \.value) { option in
+                    let isChosen = option.value == selection
+                    Button {
+                        selection = option.value
+                    } label: {
+                        Text(option.label)
+                            .font(.rounded(10, isChosen ? .bold : .medium)).lineLimit(1).minimumScaleFactor(0.7)
+                            .foregroundColor(isChosen ? .brandAccent : .secondaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 4)
+                            .background(
+                                RoundedRectangle(cornerRadius: 5)
+                                    .fill(isChosen ? Color.brandAccent.opacity(0.12) : Color.clear))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 5)
+                                    .strokeBorder(isChosen ? Color.brandAccent.opacity(0.6) : Color.clear, lineWidth: 1))
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(isChosen ? [.isSelected] : [])
+                }
+            }
+            .padding(2)
+            .background(RoundedRectangle(cornerRadius: 7).fill(Color.segmentBg))
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(title)
+        }
+    }
+}
+
 struct PaintedSwitch: View {
     let isOn: Bool
 
@@ -593,8 +634,8 @@ struct SessionCard: View {
     var isUrgent = false
     /// Opens the lesson on what breaks the cache.
     var onMiss: (() -> Void)?
-    /// Lets the app compact this session before its cache goes cold; nil where that is not offered.
-    var autoCompact: Binding<Bool>?
+    /// What to do as this session's cache is about to go cold; nil where nothing is offered.
+    var beforeExpiry: Binding<BeforeExpiry>?
     var isPreview = false
 
     private var cacheTint: Color {
@@ -774,14 +815,24 @@ struct SessionCard: View {
                     }
                 }
 
-                if let autoCompact {
-                    VStack(alignment: .leading, spacing: 4) {
-                        SwitchRow(title: strings.autoCompact, isOn: autoCompact, isPreview: isPreview)
-                        if autoCompact.wrappedValue {
-                            let status = AutoCompact.status(of: session)
-                            Text(session.autoCompactLine(strings, now: Date()))
+                if let beforeExpiry {
+                    VStack(alignment: .leading, spacing: 5) {
+                        ChoiceRow(
+                            title: strings.beforeExpiry,
+                            options: [
+                                (.leave, strings.choiceLeave), (.warm, strings.choiceWarm), (.compact, strings.choiceCompact),
+                            ],
+                            selection: beforeExpiry)
+                        if let costs = session.expiryCostLine(strings, isSubscription: isSubscription) {
+                            Text(costs).font(.rounded(10)).monospacedDigit().foregroundColor(.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        if let line = session.beforeExpiryLine(strings, choice: beforeExpiry.wrappedValue, now: Date()) {
+                            let status = AutoCompact.status(of: session, choice: beforeExpiry.wrappedValue)
+                            let isTrouble = status == .needsPlugin || status == .failed || status == .warmFailed
+                            Text(line)
                                 .font(.rounded(10)).monospacedDigit()
-                                .foregroundColor(status == .needsPlugin || status == .failed ? .tone(.warn) : .secondaryText)
+                                .foregroundColor(isTrouble ? .tone(.warn) : .secondaryText)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
@@ -1196,9 +1247,9 @@ struct PopoverView: View {
     var updater: Updater?
     /// Keeps a session in view by its id; nil goes back to following the latest.
     var pin: (String?) -> Void = { _ in }
-    /// The sessions the app may compact before their cache goes cold, and the way to change that.
-    var autoCompacted: Set<String> = []
-    var setAutoCompact: (String, Bool) -> Void = { _, _ in }
+    /// What the person chose for each session's cache before it goes cold, and the way to change that.
+    var choices: [String: BeforeExpiry] = [:]
+    var setChoice: (String, BeforeExpiry) -> Void = { _, _ in }
     /// The support pages' state, which outlives the popover.
     var support: SupportModel?
     /// Whether the support pages are showing; mirrors `support.isPresented`.
@@ -1229,6 +1280,7 @@ struct PopoverView: View {
     @AppStorage(Preferences.alertQuotaKey) private var alertsOnQuota = false
     @AppStorage(Preferences.alertLeadKey) private var alertLeadMinutes = Int(Alerts.defaultLead / 60)
     @AppStorage(Preferences.waitingMarkKey) private var marksWaiting = true
+    @AppStorage(Preferences.compactInstructionsKey) private var compactInstructions = Preferences.defaultCompactInstructions
     /// macOS refused the notifications an alert needs.
     @State private var notificationsDenied = false
 
@@ -1352,8 +1404,8 @@ struct PopoverView: View {
                     session: current, strings: strings, isSubscription: summary.isSubscription,
                     unpin: summary.isPinned ? { pin(nil) } : nil, isUrgent: summary.isUrgent,
                     onMiss: { open("cache-breakers") },
-                    autoCompact: AutoCompact.isOffered(for: current)
-                        ? Binding(get: { autoCompacted.contains(current.id) }, set: { setAutoCompact(current.id, $0) })
+                    beforeExpiry: AutoCompact.isOffered(for: current)
+                        ? Binding(get: { choices[current.id] ?? .leave }, set: { setChoice(current.id, $0) })
                         : nil,
                     isPreview: isPreview)
             } else {
@@ -1600,6 +1652,25 @@ struct PopoverView: View {
             settingsGroup(strings.settingsSessions) {
                 footerSwitch(strings.followUrgent, isOn: $followsUrgent)
                 footerSwitch(strings.waitingMark, isOn: $marksWaiting)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(strings.compactInstructions).font(.rounded(11, .semibold))
+                        .fixedSize(horizontal: false, vertical: true)
+                    if isPreview {
+                        Text(compactInstructions).font(.rounded(10)).foregroundColor(.primary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(6)
+                            .background(RoundedRectangle(cornerRadius: 5).fill(Color.segmentBg))
+                            .fixedSize(horizontal: false, vertical: true)
+                    } else {
+                        TextField(strings.compactInstructions, text: $compactInstructions, axis: .vertical)
+                            .font(.rounded(10))
+                            .lineLimit(2...4)
+                            .textFieldStyle(.roundedBorder)
+                            .accessibilityLabel(strings.compactInstructions)
+                    }
+                    Text(strings.compactInstructionsNote).font(.rounded(10)).foregroundColor(.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             settingsGroup(strings.settingsNotifications) {
                 HStack(spacing: 8) {

@@ -87,7 +87,7 @@ extension Guide {
                 "Saat beberapa sesi terbuka, batas adalah milik akun Anda; jam dan saran adalah milik sesi yang cache berharganya hampir dingin, atau jika tidak ada, sesi yang terakhir beraktivitas.",
                 "Titik di dalam bulan sabit: ada sesi yang menunggu izin atau jawaban Anda. Di daftar, sesi itu bertanda tangan terangkat.",
                 "Angka di samping kepingan salju adalah yang ditulis ulang sesi jika cache-nya dingin. Sesi yang sudah dingin menunjukkan apa yang ditulis ulang saat dilanjutkan.",
-                "Sakelar pada kartu sesi membuat CacheCue menjalankan /compact untuk Anda saat sesi diam dan cache tersisa sekitar 5 menit. Pemadatan membuang detail dan tidak bisa dibatalkan, jadi sakelar itu mati sampai Anda menyalakannya.",
+                "Setiap kartu sesi punya pilihan untuk saat cache hampir dingin: biarkan; jaga hangat, CacheCue membaca ulang cache dengan permintaan satu baris sekitar 3 menit sebelum kedaluwarsa, paling banyak 3 kali berturut-turut, tanpa menambah apa pun ke percakapan; atau padatkan, CacheCue menjalankan /compact untuk Anda saat sesi diam dan cache tersisa sekitar 5 menit, yang membuang detail dan tidak bisa dibatalkan. Keduanya ada biayanya, jadi tidak ada yang aktif sampai Anda memilihnya. Jika Claude Code memadatkan sendiri sesi terminal yang diam, kartu akan menyebutkannya dan CacheCue tidak ikut campur.",
             ],
             takeaway: "Tanpa titik, tidak ada yang perlu dilakukan. Ada titik: buka jendela dan baca kartunya."),
     ]
@@ -177,7 +177,7 @@ extension Guide {
                 "Khi mở nhiều phiên, giới hạn là của tài khoản; đồng hồ và lời khuyên thuộc về phiên có cache đáng giữ sắp nguội, nếu không có thì thuộc về phiên hoạt động gần nhất.",
                 "Chấm trong hình trăng lưỡi liềm: có phiên đang chờ bạn cấp quyền hoặc trả lời. Trong danh sách, phiên đó có biểu tượng bàn tay giơ lên.",
                 "Con số cạnh bông tuyết là lượng mà phiên phải ghi lại nếu cache nguội. Phiên đã nguội sẽ cho biết việc tiếp tục phải ghi lại bao nhiêu.",
-                "Công tắc trên thẻ phiên cho phép CacheCue chạy /compact giúp bạn khi phiên rảnh và cache còn khoảng 5 phút. Nén sẽ bỏ bớt chi tiết và không thể hoàn tác, nên nó tắt cho đến khi bạn bật.",
+                "Mỗi thẻ phiên có lựa chọn cho lúc cache sắp nguội: để yên; giữ ấm, CacheCue đọc lại cache bằng một yêu cầu một dòng khoảng 3 phút trước khi hết hạn, tối đa 3 lần liên tiếp, không thêm gì vào cuộc trò chuyện; hoặc nén, CacheCue chạy /compact giúp bạn khi phiên rảnh và cache còn khoảng 5 phút, việc này bỏ bớt chi tiết và không thể hoàn tác. Cả hai đều tốn một chút, nên không cái nào bật cho đến khi bạn chọn. Khi Claude Code tự nén một phiên terminal đang rảnh, thẻ sẽ ghi rõ và CacheCue không can thiệp.",
             ],
             takeaway: "Không có dấu chấm thì không cần làm gì. Có dấu chấm thì mở cửa sổ và đọc thẻ."),
     ]
@@ -267,7 +267,7 @@ extension Guide {
                 "เมื่อเปิดหลายเซสชัน โควตาเป็นของบัญชีคุณ ส่วนนาฬิกาและคำแนะนำเป็นของเซสชันที่แคชซึ่งควรเก็บไว้ใกล้จะเย็น หากไม่มีก็เป็นของเซสชันที่ทำงานล่าสุด",
                 "จุดในรูปจันทร์เสี้ยว: มีเซสชันกำลังรอการอนุญาตหรือคำตอบจากคุณ ในรายการ เซสชันนั้นจะมีไอคอนมือยกขึ้น",
                 "ตัวเลขข้างเกล็ดหิมะคือปริมาณที่เซสชันต้องเขียนใหม่หากแคชเย็นลง เซสชันที่เย็นแล้วจะบอกว่าการกลับมาใช้ต่อต้องเขียนใหม่เท่าไร",
-                "สวิตช์บนการ์ดเซสชันให้ CacheCue รัน /compact แทนคุณเมื่อเซสชันว่างและแคชเหลือราว 5 นาที การบีบอัดจะทิ้งรายละเอียดและย้อนกลับไม่ได้ จึงปิดอยู่จนกว่าคุณจะเปิดเอง",
+                "การ์ดเซสชันแต่ละใบให้เลือกว่าจะทำอย่างไรเมื่อแคชใกล้เย็น: ปล่อยไว้; รักษาความอุ่น โดย CacheCue อ่านแคชซ้ำด้วยคำขอบรรทัดเดียวราว 3 นาทีก่อนหมดอายุ ติดต่อกันได้สูงสุด 3 ครั้ง โดยไม่เพิ่มอะไรลงในบทสนทนา; หรือบีบอัด โดย CacheCue รัน /compact แทนคุณเมื่อเซสชันว่างและแคชเหลือราว 5 นาที ซึ่งจะทิ้งรายละเอียดและย้อนกลับไม่ได้ ทั้งสองแบบมีค่าใช้จ่ายเล็กน้อย จึงปิดอยู่จนกว่าคุณจะเลือกเอง ถ้า Claude Code บีบอัดเซสชันเทอร์มินัลที่ว่างอยู่เอง การ์ดจะบอกไว้และ CacheCue จะไม่เข้าไปยุ่ง",
             ],
             takeaway: "ไม่มีจุดก็ไม่ต้องทำอะไร มีจุดให้เปิดหน้าต่างแล้วอ่านการ์ด"),
     ]
@@ -357,7 +357,7 @@ extension Guide {
                 "कई सत्र खुले हों तो सीमाएँ आपके खाते की होती हैं; घड़ी और सलाह उस सत्र की होती है जिसका काम का कैश ठंडा होने वाला है, और ऐसा कोई न हो तो उस सत्र की जिसने आख़िर में कुछ किया।",
                 "अर्धचंद्र के भीतर बिंदु: कोई सत्र आपकी अनुमति या जवाब का इंतज़ार कर रहा है। सूची में उस सत्र पर उठे हाथ का चिह्न होता है।",
                 "बर्फ़ के फाहे के पास की संख्या वह है जो सत्र अपना कैश ठंडा होने पर दोबारा लिखेगा। पहले से ठंडा सत्र बताता है कि उसे फिर शुरू करने पर कितना दोबारा लिखा जाएगा।",
-                "सत्र कार्ड का स्विच CacheCue को आपके लिए /compact चलाने देता है, जब सत्र निष्क्रिय हो और कैश के लगभग 5 मिनट बचे हों। कॉम्पैक्ट करने से ब्योरे हट जाते हैं और इसे वापस नहीं किया जा सकता, इसलिए जब तक आप चालू न करें यह बंद रहता है।",
+                "हर सत्र कार्ड पर चुन सकते हैं कि कैश ठंडा होने वाला हो तो क्या करें: कुछ नहीं; गर्म रखें, जिसमें CacheCue समाप्ति से लगभग 3 मिनट पहले एक पंक्ति के अनुरोध से कैश दोबारा पढ़ता है, लगातार अधिकतम 3 बार, बातचीत में कुछ जोड़े बिना; या कॉम्पैक्ट करें, जिसमें सत्र निष्क्रिय हो और कैश के लगभग 5 मिनट बचे हों तो CacheCue आपके लिए /compact चलाता है, जिससे ब्योरे हट जाते हैं और इसे वापस नहीं किया जा सकता। दोनों में थोड़ा खर्च होता है, इसलिए जब तक आप न चुनें कोई चालू नहीं रहता। जहाँ Claude Code निष्क्रिय टर्मिनल सत्र को खुद कॉम्पैक्ट करता है, वहाँ कार्ड यह बताता है और CacheCue दखल नहीं देता।",
             ],
             takeaway: "बिंदु नहीं तो कुछ करना नहीं। बिंदु हो तो विंडो खोलें और कार्ड पढ़ें।"),
     ]
@@ -447,7 +447,7 @@ extension Guide {
                 "عند فتح عدة جلسات، الحدود تخص حسابك؛ أما الساعة والنصيحة فتخصان الجلسة التي يوشك كاشها المهم أن يبرد، وإن لم توجد فالجلسة التي كانت آخر من نشط.",
                 "نقطة داخل الهلال: هناك جلسة تنتظر إذنك أو ردّك. في القائمة تحمل تلك الجلسة رمز يد مرفوعة.",
                 "الرقم بجانب ندفة الثلج هو ما تعيد الجلسة كتابته إذا برد كاشها. والجلسة التي بردت فعلًا تبيّن ما يعيد استئنافها كتابته.",
-                "المفتاح في بطاقة الجلسة يسمح لـ CacheCue بتشغيل /compact نيابةً عنك عندما تكون الجلسة خاملة ويتبقى من الكاش نحو 5 دقائق. الضغط يحذف تفاصيل ولا يمكن التراجع عنه، لذا يبقى مطفأً حتى تشغّله أنت.",
+                "في كل بطاقة جلسة تختار ما يحدث حين يوشك الكاش أن يبرد: لا شيء؛ أو إبقاؤه دافئًا، فيعيد CacheCue قراءة الكاش بطلب من سطر واحد قبل انتهائه بنحو 3 دقائق، حتى 3 مرات متتالية، دون إضافة شيء إلى المحادثة؛ أو الضغط، فيشغّل CacheCue الأمر /compact نيابةً عنك عندما تكون الجلسة خاملة ويتبقى من الكاش نحو 5 دقائق، وهذا يحذف تفاصيل ولا يمكن التراجع عنه. لكليهما كلفة صغيرة، لذا لا يعمل أي منهما حتى تختاره. وحين يضغط Claude Code بنفسه جلسة طرفية خاملة، تذكر البطاقة ذلك ولا يتدخل CacheCue.",
             ],
             takeaway: "لا نقطة، لا شيء لتفعله. وجود نقطة يعني: افتح النافذة واقرأ البطاقة."),
     ]

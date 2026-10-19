@@ -257,8 +257,8 @@ public struct Strings: Equatable {
     public var resumeRewrites: String
     /// The footer's switch for the dot in the menu bar's crescent.
     public var waitingMark: String
-    /// A session's switch: let the plugin run `/compact` on it before its cache goes cold.
-    public var autoCompact: String
+    /// The session card's choice of what to do as its cache is about to go cold.
+    public var beforeExpiry: String
     /// `%d` is minutes of cache left when it runs.
     public var autoCompactNote: String
     public var autoCompactNeedsPlugin: String
@@ -288,6 +288,22 @@ public struct Strings: Equatable {
     public var settingsGeneral: String
     public var settingsSessions: String
     public var settingsNotifications: String
+    /// The three options of `beforeExpiry`; the last two also name a notification's buttons.
+    public var choiceLeave: String
+    public var choiceWarm: String
+    public var choiceCompact: String
+    /// `%d` is minutes of cache left when it runs, then the most reads in a row.
+    public var warmNote: String
+    /// `%@` is a time of day; then the read's place in a row, and the most there may be.
+    public var warmDone: String
+    public var warmFailed: String
+    /// `%@` is a time of day.
+    public var claudeCodeCompacts: String
+    /// Three dollar figures: coming back to a cold cache, compacting, keeping warm another hour.
+    public var expiryCosts: String
+    /// The settings page's text for what a compaction's summary should keep.
+    public var compactInstructions: String
+    public var compactInstructionsNote: String
 
     public func source(_ source: String) -> String {
         switch source {
@@ -476,7 +492,7 @@ extension Strings {
         waitingForYou: "Waiting for you",
         resumeRewrites: "Resuming rewrites %@ tokens",
         waitingMark: "Mark the menu bar when Claude waits for you",
-        autoCompact: "Compact before the cache goes cold",
+        beforeExpiry: "Before the cache goes cold",
         autoCompactNote: "Runs /compact here once this session sits idle with %d minutes of cache left. Compacting drops detail and cannot be undone.",
         autoCompactNeedsPlugin: "Not ready in this session: restart it so it loads the current CacheCue plugin.",
         autoCompactDone: "Compacted for you at %@",
@@ -496,7 +512,17 @@ extension Strings {
         settings: "Settings",
         settingsGeneral: "General",
         settingsSessions: "Sessions",
-        settingsNotifications: "Notifications")
+        settingsNotifications: "Notifications",
+        choiceLeave: "Leave it",
+        choiceWarm: "Keep warm",
+        choiceCompact: "Compact",
+        warmNote: "Rereads the cache with a one-line request once this session sits idle with %d minutes left, up to %d times in a row. Nothing is added to the conversation.",
+        warmDone: "Kept warm at %@ · %d of %d",
+        warmFailed: "Keeping warm did not go through.",
+        claudeCodeCompacts: "Claude Code compacts this session itself at about %@. To choose here instead, turn off Idle compaction in /config.",
+        expiryCosts: "Resume cold %@ · compact ≈%@ · warm 1h %@",
+        compactInstructions: "When compacting, ask the summary to keep",
+        compactInstructionsNote: "Sent with the compactions CacheCue runs for you. Leave it empty for Claude Code's own summary.")
 
     static let zhHans = Strings(
         fiveHourTitle: "5 小时额度", sevenDayTitle: "7 天额度", used: "已用", noReading: "暂无读数",
@@ -624,7 +650,7 @@ extension Strings {
         waitingForYou: "等你回复",
         resumeRewrites: "恢复要重写 %@ tokens",
         waitingMark: "Claude 等你回复时在菜单栏标出",
-        autoCompact: "缓存变冷前自动压缩",
+        beforeExpiry: "缓存变冷前",
         autoCompactNote: "这个会话空闲且缓存只剩 %d 分钟时，在这里运行 /compact。压缩会丢掉细节，无法撤销。",
         autoCompactNeedsPlugin: "这个会话还用不了：重启它，让它加载当前的 CacheCue 插件。",
         autoCompactDone: "已在 %@ 替你压缩",
@@ -644,7 +670,17 @@ extension Strings {
         settings: "设置",
         settingsGeneral: "通用",
         settingsSessions: "会话",
-        settingsNotifications: "通知")
+        settingsNotifications: "通知",
+        choiceLeave: "不管",
+        choiceWarm: "保温",
+        choiceCompact: "压缩",
+        warmNote: "这个会话空闲且缓存只剩 %d 分钟时，发一条一句话的请求把缓存读一遍，最多连续 %d 次。对话里不会多出任何内容。",
+        warmDone: "已在 %@ 保温 · 第 %d / %d 次",
+        warmFailed: "保温没有成功。",
+        claudeCodeCompacts: "Claude Code 会在约 %@ 自己压缩这个会话。想在这里选，请在 /config 里关掉 Idle compaction。",
+        expiryCosts: "放凉回来 %@ · 压缩约 %@ · 保温 1 小时 %@",
+        compactInstructions: "压缩时请摘要保留",
+        compactInstructionsNote: "随 CacheCue 替你发起的压缩一起发送。留空则用 Claude Code 自己的摘要。")
 
     static let zhHant = Strings(
         fiveHourTitle: "5 小時額度", sevenDayTitle: "7 天額度", used: "已用", noReading: "暫無讀數",
@@ -772,7 +808,7 @@ extension Strings {
         waitingForYou: "等你回覆",
         resumeRewrites: "恢復要重寫 %@ tokens",
         waitingMark: "Claude 等你回覆時在選單列標示",
-        autoCompact: "快取變冷前自動壓縮",
+        beforeExpiry: "快取變冷前",
         autoCompactNote: "這個工作階段閒置且快取只剩 %d 分鐘時，在這裡執行 /compact。壓縮會丟掉細節，無法復原。",
         autoCompactNeedsPlugin: "這個工作階段還不能用：重新啟動它，讓它載入目前的 CacheCue 外掛。",
         autoCompactDone: "已在 %@ 替你壓縮",
@@ -792,7 +828,17 @@ extension Strings {
         settings: "設定",
         settingsGeneral: "一般",
         settingsSessions: "工作階段",
-        settingsNotifications: "通知")
+        settingsNotifications: "通知",
+        choiceLeave: "不管",
+        choiceWarm: "保溫",
+        choiceCompact: "壓縮",
+        warmNote: "這個工作階段閒置且快取只剩 %d 分鐘時，送出一句話的請求把快取讀一遍，最多連續 %d 次。對話裡不會多出任何內容。",
+        warmDone: "已在 %@ 保溫 · 第 %d / %d 次",
+        warmFailed: "保溫沒有成功。",
+        claudeCodeCompacts: "Claude Code 會在約 %@ 自行壓縮這個工作階段。想在這裡選擇，請在 /config 關閉 Idle compaction。",
+        expiryCosts: "冷了再回來 %@ · 壓縮約 %@ · 保溫 1 小時 %@",
+        compactInstructions: "壓縮時請摘要保留",
+        compactInstructionsNote: "隨 CacheCue 替你發起的壓縮一併送出。留空則使用 Claude Code 自己的摘要。")
 
     static let ja = Strings(
         fiveHourTitle: "5時間の上限", sevenDayTitle: "7日間の上限", used: "使用済み", noReading: "データなし",
@@ -920,7 +966,7 @@ extension Strings {
         waitingForYou: "あなたの返答待ち",
         resumeRewrites: "再開すると %@ トークンを書き直します",
         waitingMark: "返答待ちをメニューバーに表示",
-        autoCompact: "キャッシュが切れる前に自動で圧縮",
+        beforeExpiry: "キャッシュが切れる前に",
         autoCompactNote: "このセッションが待機中でキャッシュの残りが %d 分になったら、ここで /compact を実行します。圧縮すると細部が失われ、元に戻せません。",
         autoCompactNeedsPlugin: "このセッションではまだ使えません。再起動して現在の CacheCue プラグインを読み込ませてください。",
         autoCompactDone: "%@ に自動で圧縮しました",
@@ -940,7 +986,17 @@ extension Strings {
         settings: "設定",
         settingsGeneral: "一般",
         settingsSessions: "セッション",
-        settingsNotifications: "通知")
+        settingsNotifications: "通知",
+        choiceLeave: "何もしない",
+        choiceWarm: "保温",
+        choiceCompact: "圧縮",
+        warmNote: "このセッションが待機中でキャッシュの残りが %d 分になったら、1 行のリクエストでキャッシュを読み直します（最大 %d 回連続）。会話には何も追加されません。",
+        warmDone: "%@ に保温 · %d / %d 回目",
+        warmFailed: "保温は完了しませんでした。",
+        claudeCodeCompacts: "このセッションは Claude Code が %@ ごろに自分で圧縮します。ここで選ぶには、/config で Idle compaction をオフにしてください。",
+        expiryCosts: "切れてから戻る %@ · 圧縮 約%@ · 1 時間保温 %@",
+        compactInstructions: "圧縮時に要約へ残してほしいこと",
+        compactInstructionsNote: "CacheCue が代わりに実行する圧縮に添えて送ります。空欄なら Claude Code 標準の要約になります。")
 
     static let ko = Strings(
         fiveHourTitle: "5시간 한도", sevenDayTitle: "7일 한도", used: "사용됨", noReading: "데이터 없음",
@@ -1068,7 +1124,7 @@ extension Strings {
         waitingForYou: "응답을 기다리는 중",
         resumeRewrites: "다시 시작하면 %@ 토큰을 다시 씁니다",
         waitingMark: "Claude가 응답을 기다릴 때 메뉴 막대에 표시",
-        autoCompact: "캐시가 식기 전에 자동 압축",
+        beforeExpiry: "캐시가 식기 전에",
         autoCompactNote: "이 세션이 대기 중이고 캐시가 %d분 남으면 여기서 /compact를 실행합니다. 압축하면 세부 내용이 사라지며 되돌릴 수 없습니다.",
         autoCompactNeedsPlugin: "이 세션에서는 아직 쓸 수 없습니다. 세션을 다시 시작해 현재 CacheCue 플러그인을 불러오세요.",
         autoCompactDone: "%@에 자동으로 압축했습니다",
@@ -1088,7 +1144,17 @@ extension Strings {
         settings: "설정",
         settingsGeneral: "일반",
         settingsSessions: "세션",
-        settingsNotifications: "알림")
+        settingsNotifications: "알림",
+        choiceLeave: "그대로 두기",
+        choiceWarm: "보온",
+        choiceCompact: "압축",
+        warmNote: "이 세션이 대기 중이고 캐시가 %d분 남으면 한 줄짜리 요청으로 캐시를 다시 읽습니다(연속 최대 %d회). 대화에는 아무것도 추가되지 않습니다.",
+        warmDone: "%@에 보온 · %d/%d회",
+        warmFailed: "보온이 완료되지 않았습니다.",
+        claudeCodeCompacts: "이 세션은 Claude Code가 %@쯤 직접 압축합니다. 여기서 선택하려면 /config에서 Idle compaction을 끄세요.",
+        expiryCosts: "식은 뒤 복귀 %@ · 압축 약 %@ · 1시간 보온 %@",
+        compactInstructions: "압축할 때 요약에 남길 내용",
+        compactInstructionsNote: "CacheCue가 대신 실행하는 압축에 함께 보냅니다. 비워 두면 Claude Code 기본 요약을 씁니다.")
 
     static let de = Strings(
         fiveHourTitle: "5-Stunden-Limit", sevenDayTitle: "7-Tage-Limit", used: "Genutzt", noReading: "Noch kein Wert",
@@ -1216,7 +1282,7 @@ extension Strings {
         waitingForYou: "Wartet auf dich",
         resumeRewrites: "Fortsetzen schreibt %@ Tokens neu",
         waitingMark: "In der Menüleiste zeigen, wenn Claude wartet",
-        autoCompact: "Komprimieren, bevor der Cache kalt wird",
+        beforeExpiry: "Bevor der Cache kalt wird",
         autoCompactNote: "Führt hier /compact aus, sobald diese Sitzung ruht und noch %d Minuten Cache bleiben. Komprimieren verwirft Details und lässt sich nicht rückgängig machen.",
         autoCompactNeedsPlugin: "In dieser Sitzung noch nicht bereit: Starte sie neu, damit sie das aktuelle CacheCue-Plugin lädt.",
         autoCompactDone: "Um %@ für dich komprimiert",
@@ -1236,7 +1302,17 @@ extension Strings {
         settings: "Einstellungen",
         settingsGeneral: "Allgemein",
         settingsSessions: "Sitzungen",
-        settingsNotifications: "Mitteilungen")
+        settingsNotifications: "Mitteilungen",
+        choiceLeave: "Nichts tun",
+        choiceWarm: "Warmhalten",
+        choiceCompact: "Komprimieren",
+        warmNote: "Liest den Cache mit einer einzeiligen Anfrage erneut, sobald diese Sitzung ruht und noch %d Minuten bleiben, höchstens %d-mal hintereinander. Dem Gespräch wird nichts hinzugefügt.",
+        warmDone: "Warmgehalten um %@ · %d von %d",
+        warmFailed: "Das Warmhalten hat nicht geklappt.",
+        claudeCodeCompacts: "Claude Code komprimiert diese Sitzung gegen %@ selbst. Um hier zu wählen, schalte Idle compaction in /config aus.",
+        expiryCosts: "Kalt zurück %@ · komprimieren ≈%@ · 1 h warm %@",
+        compactInstructions: "Beim Komprimieren in der Zusammenfassung behalten",
+        compactInstructionsNote: "Wird mit den Komprimierungen gesendet, die CacheCue für dich ausführt. Leer lassen für die eigene Zusammenfassung von Claude Code.")
 
     static let fr = Strings(
         fiveHourTitle: "Limite 5 heures", sevenDayTitle: "Limite 7 jours", used: "Utilisé", noReading: "Pas encore de mesure",
@@ -1364,7 +1440,7 @@ extension Strings {
         waitingForYou: "En attente de votre réponse",
         resumeRewrites: "Reprendre réécrit %@ tokens",
         waitingMark: "Marquer la barre des menus si Claude attend",
-        autoCompact: "Compacter avant que le cache refroidisse",
+        beforeExpiry: "Avant que le cache refroidisse",
         autoCompactNote: "Lance /compact ici dès que cette session est inactive et qu’il reste %d minutes de cache. Compacter supprime des détails et ne peut pas être annulé.",
         autoCompactNeedsPlugin: "Pas encore prêt dans cette session : relancez-la pour qu’elle charge le plugin CacheCue actuel.",
         autoCompactDone: "Compactée pour vous à %@",
@@ -1384,7 +1460,17 @@ extension Strings {
         settings: "Réglages",
         settingsGeneral: "Général",
         settingsSessions: "Sessions",
-        settingsNotifications: "Notifications")
+        settingsNotifications: "Notifications",
+        choiceLeave: "Ne rien faire",
+        choiceWarm: "Garder au chaud",
+        choiceCompact: "Compacter",
+        warmNote: "Relit le cache avec une requête d’une ligne dès que cette session est inactive et qu’il reste %d minutes, jusqu’à %d fois de suite. Rien n’est ajouté à la conversation.",
+        warmDone: "Gardé au chaud à %@ · %d sur %d",
+        warmFailed: "Le maintien au chaud n’a pas abouti.",
+        claudeCodeCompacts: "Claude Code compacte lui-même cette session vers %@. Pour choisir ici, désactivez Idle compaction dans /config.",
+        expiryCosts: "Retour à froid %@ · compacter ≈%@ · 1 h au chaud %@",
+        compactInstructions: "En compactant, demander au résumé de garder",
+        compactInstructionsNote: "Envoyé avec les compactages que CacheCue lance pour vous. Laissez vide pour le résumé propre à Claude Code.")
 
     static let es = Strings(
         fiveHourTitle: "Límite de 5 horas", sevenDayTitle: "Límite de 7 días", used: "Usado", noReading: "Aún sin datos",
@@ -1512,7 +1598,7 @@ extension Strings {
         waitingForYou: "Esperando tu respuesta",
         resumeRewrites: "Reanudar reescribe %@ tokens",
         waitingMark: "Marcar en la barra de menús si Claude espera",
-        autoCompact: "Compactar antes de enfriarse la caché",
+        beforeExpiry: "Antes de que se enfríe la caché",
         autoCompactNote: "Ejecuta /compact aquí cuando esta sesión está inactiva y quedan %d minutos de caché. Compactar descarta detalles y no se puede deshacer.",
         autoCompactNeedsPlugin: "Aún no disponible en esta sesión: reiníciala para que cargue el plugin actual de CacheCue.",
         autoCompactDone: "Compactada por ti a las %@",
@@ -1532,7 +1618,17 @@ extension Strings {
         settings: "Ajustes",
         settingsGeneral: "General",
         settingsSessions: "Sesiones",
-        settingsNotifications: "Notificaciones")
+        settingsNotifications: "Notificaciones",
+        choiceLeave: "No hacer nada",
+        choiceWarm: "Mantener caliente",
+        choiceCompact: "Compactar",
+        warmNote: "Vuelve a leer la caché con una petición de una línea cuando esta sesión está inactiva y quedan %d minutos, hasta %d veces seguidas. No se añade nada a la conversación.",
+        warmDone: "Mantenida caliente a las %@ · %d de %d",
+        warmFailed: "No se pudo mantener caliente.",
+        claudeCodeCompacts: "Claude Code compacta esta sesión por sí mismo hacia las %@. Para elegir aquí, desactiva Idle compaction en /config.",
+        expiryCosts: "Volver en frío %@ · compactar ≈%@ · 1 h caliente %@",
+        compactInstructions: "Al compactar, pedir al resumen que conserve",
+        compactInstructionsNote: "Se envía con las compactaciones que CacheCue ejecuta por ti. Déjalo vacío para usar el resumen propio de Claude Code.")
 
     static let pt = Strings(
         fiveHourTitle: "Limite de 5 horas", sevenDayTitle: "Limite de 7 dias", used: "Usado", noReading: "Ainda sem dados",
@@ -1660,7 +1756,7 @@ extension Strings {
         waitingForYou: "À espera da sua resposta",
         resumeRewrites: "Retomar reescreve %@ tokens",
         waitingMark: "Marcar na barra de menus se o Claude espera",
-        autoCompact: "Compactar antes de o cache esfriar",
+        beforeExpiry: "Antes de o cache esfriar",
         autoCompactNote: "Executa /compact aqui quando esta sessão está ociosa e restam %d minutos de cache. Compactar descarta detalhes e não pode ser desfeito.",
         autoCompactNeedsPlugin: "Ainda não disponível nesta sessão: reinicie-a para carregar o plugin atual do CacheCue.",
         autoCompactDone: "Compactada para você às %@",
@@ -1680,7 +1776,17 @@ extension Strings {
         settings: "Ajustes",
         settingsGeneral: "Geral",
         settingsSessions: "Sessões",
-        settingsNotifications: "Notificações")
+        settingsNotifications: "Notificações",
+        choiceLeave: "Não fazer nada",
+        choiceWarm: "Manter aquecido",
+        choiceCompact: "Compactar",
+        warmNote: "Relê o cache com uma requisição de uma linha quando esta sessão está ociosa e restam %d minutos, até %d vezes seguidas. Nada é adicionado à conversa.",
+        warmDone: "Mantido aquecido às %@ · %d de %d",
+        warmFailed: "Não foi possível manter aquecido.",
+        claudeCodeCompacts: "O Claude Code compacta esta sessão sozinho por volta das %@. Para escolher aqui, desative Idle compaction em /config.",
+        expiryCosts: "Voltar frio %@ · compactar ≈%@ · 1 h aquecido %@",
+        compactInstructions: "Ao compactar, pedir ao resumo que mantenha",
+        compactInstructionsNote: "Enviado com as compactações que o CacheCue executa por você. Deixe vazio para usar o resumo do próprio Claude Code.")
 
     static let it = Strings(
         fiveHourTitle: "Limite 5 ore", sevenDayTitle: "Limite 7 giorni", used: "Usato", noReading: "Nessun dato",
@@ -1808,7 +1914,7 @@ extension Strings {
         waitingForYou: "In attesa di una tua risposta",
         resumeRewrites: "Riprendere riscrive %@ token",
         waitingMark: "Segnala nella barra dei menu se Claude aspetta",
-        autoCompact: "Compatta prima che la cache sia fredda",
+        beforeExpiry: "Prima che la cache sia fredda",
         autoCompactNote: "Esegue /compact qui quando questa sessione è inattiva e restano %d minuti di cache. Compattare elimina dettagli e non si può annullare.",
         autoCompactNeedsPlugin: "Non ancora pronto in questa sessione: riavviala perché carichi il plugin CacheCue attuale.",
         autoCompactDone: "Compattata per te alle %@",
@@ -1828,7 +1934,17 @@ extension Strings {
         settings: "Impostazioni",
         settingsGeneral: "Generali",
         settingsSessions: "Sessioni",
-        settingsNotifications: "Notifiche")
+        settingsNotifications: "Notifiche",
+        choiceLeave: "Non fare nulla",
+        choiceWarm: "Tieni calda",
+        choiceCompact: "Compatta",
+        warmNote: "Rilegge la cache con una richiesta di una riga quando questa sessione è inattiva e restano %d minuti, fino a %d volte di fila. Alla conversazione non si aggiunge nulla.",
+        warmDone: "Tenuta calda alle %@ · %d di %d",
+        warmFailed: "Non è stato possibile tenerla calda.",
+        claudeCodeCompacts: "Claude Code compatta da solo questa sessione verso le %@. Per scegliere qui, disattiva Idle compaction in /config.",
+        expiryCosts: "Ritorno a freddo %@ · compattare ≈%@ · 1 h calda %@",
+        compactInstructions: "Nel compattare, chiedi al riassunto di tenere",
+        compactInstructionsNote: "Inviato con le compattazioni che CacheCue esegue per te. Lascia vuoto per il riassunto di Claude Code.")
 
     static let nl = Strings(
         fiveHourTitle: "5-uurslimiet", sevenDayTitle: "7-dagenlimiet", used: "Gebruikt", noReading: "Nog geen meting",
@@ -1956,7 +2072,7 @@ extension Strings {
         waitingForYou: "Wacht op jou",
         resumeRewrites: "Hervatten herschrijft %@ tokens",
         waitingMark: "Markeer in de menubalk als Claude wacht",
-        autoCompact: "Compact voordat de cache koud wordt",
+        beforeExpiry: "Voordat de cache koud wordt",
         autoCompactNote: "Voert hier /compact uit zodra deze sessie stilstaat en er nog %d minuten cache over zijn. Compacten gooit details weg en kan niet ongedaan worden gemaakt.",
         autoCompactNeedsPlugin: "Nog niet klaar in deze sessie: herstart haar zodat ze de huidige CacheCue-plug-in laadt.",
         autoCompactDone: "Om %@ voor je gecompact",
@@ -1976,7 +2092,17 @@ extension Strings {
         settings: "Instellingen",
         settingsGeneral: "Algemeen",
         settingsSessions: "Sessies",
-        settingsNotifications: "Meldingen")
+        settingsNotifications: "Meldingen",
+        choiceLeave: "Niets doen",
+        choiceWarm: "Warm houden",
+        choiceCompact: "Compacten",
+        warmNote: "Leest de cache opnieuw met een verzoek van één regel zodra deze sessie stilstaat en er nog %d minuten over zijn, hoogstens %d keer achter elkaar. Er komt niets bij in het gesprek.",
+        warmDone: "Warm gehouden om %@ · %d van %d",
+        warmFailed: "Warm houden is niet gelukt.",
+        claudeCodeCompacts: "Claude Code compact deze sessie rond %@ zelf. Wil je hier kiezen, zet dan Idle compaction uit in /config.",
+        expiryCosts: "Koud terug %@ · compacten ≈%@ · 1 u warm %@",
+        compactInstructions: "Bij compacten de samenvatting laten bewaren",
+        compactInstructionsNote: "Wordt meegestuurd met de compacties die CacheCue voor je uitvoert. Laat leeg voor de eigen samenvatting van Claude Code.")
 
     static let sv = Strings(
         fiveHourTitle: "5-timmarsgräns", sevenDayTitle: "7-dagarsgräns", used: "Använt", noReading: "Inget värde än",
@@ -2104,7 +2230,7 @@ extension Strings {
         waitingForYou: "Väntar på dig",
         resumeRewrites: "Att återuppta skriver om %@ tokens",
         waitingMark: "Markera i menyraden när Claude väntar på dig",
-        autoCompact: "Komprimera innan cachen blir kall",
+        beforeExpiry: "Innan cachen blir kall",
         autoCompactNote: "Kör /compact här när sessionen är inaktiv och %d minuter av cachen återstår. Komprimering tar bort detaljer och kan inte ångras.",
         autoCompactNeedsPlugin: "Inte redo i den här sessionen än: starta om den så att den läser in det aktuella CacheCue-tillägget.",
         autoCompactDone: "Komprimerad åt dig kl. %@",
@@ -2124,7 +2250,17 @@ extension Strings {
         settings: "Inställningar",
         settingsGeneral: "Allmänt",
         settingsSessions: "Sessioner",
-        settingsNotifications: "Notiser")
+        settingsNotifications: "Notiser",
+        choiceLeave: "Gör inget",
+        choiceWarm: "Håll varm",
+        choiceCompact: "Komprimera",
+        warmNote: "Läser cachen igen med en enradig begäran när sessionen är inaktiv och %d minuter återstår, högst %d gånger i rad. Inget läggs till i konversationen.",
+        warmDone: "Hölls varm %@ · %d av %d",
+        warmFailed: "Det gick inte att hålla cachen varm.",
+        claudeCodeCompacts: "Claude Code komprimerar själv den här sessionen runt %@. Vill du välja här, stäng av Idle compaction i /config.",
+        expiryCosts: "Tillbaka kall %@ · komprimera ≈%@ · varm 1 h %@",
+        compactInstructions: "Be sammanfattningen behålla vid komprimering",
+        compactInstructionsNote: "Skickas med de komprimeringar CacheCue kör åt dig. Lämna tomt för Claude Codes egen sammanfattning.")
 
     static let pl = Strings(
         fiveHourTitle: "Limit 5-godzinny", sevenDayTitle: "Limit 7-dniowy", used: "Użyto", noReading: "Brak odczytu",
@@ -2252,7 +2388,7 @@ extension Strings {
         waitingForYou: "Czeka na ciebie",
         resumeRewrites: "Wznowienie przepisuje %@ tokenów",
         waitingMark: "Oznacz na pasku menu, gdy Claude czeka",
-        autoCompact: "Kompaktuj przed wystygnięciem pamięci",
+        beforeExpiry: "Zanim pamięć wystygnie",
         autoCompactNote: "Uruchamia tu /compact, gdy sesja jest bezczynna i zostało %d minut pamięci podręcznej. Kompaktowanie usuwa szczegóły i nie da się go cofnąć.",
         autoCompactNeedsPlugin: "W tej sesji jeszcze niedostępne: uruchom ją ponownie, aby wczytała aktualną wtyczkę CacheCue.",
         autoCompactDone: "Skompaktowano za ciebie o %@",
@@ -2272,7 +2408,17 @@ extension Strings {
         settings: "Ustawienia",
         settingsGeneral: "Ogólne",
         settingsSessions: "Sesje",
-        settingsNotifications: "Powiadomienia")
+        settingsNotifications: "Powiadomienia",
+        choiceLeave: "Nic nie rób",
+        choiceWarm: "Utrzymuj ciepłą",
+        choiceCompact: "Kompaktuj",
+        warmNote: "Ponownie odczytuje pamięć podręczną jednowierszowym zapytaniem, gdy sesja jest bezczynna i zostało %d minut, najwyżej %d razy z rzędu. Do rozmowy nic nie jest dodawane.",
+        warmDone: "Utrzymano ciepłą o %@ · %d z %d",
+        warmFailed: "Nie udało się utrzymać pamięci ciepłej.",
+        claudeCodeCompacts: "Claude Code sam skompaktuje tę sesję około %@. Aby wybierać tutaj, wyłącz Idle compaction w /config.",
+        expiryCosts: "Powrót na zimno %@ · kompaktowanie ≈%@ · ciepła 1 h %@",
+        compactInstructions: "Przy kompaktowaniu poproś podsumowanie o zachowanie",
+        compactInstructionsNote: "Wysyłane z kompaktowaniami, które CacheCue uruchamia za ciebie. Zostaw puste, by użyć podsumowania samego Claude Code.")
 
     static let ru = Strings(
         fiveHourTitle: "Лимит на 5 часов", sevenDayTitle: "Лимит на 7 дней", used: "Использовано", noReading: "Данных пока нет",
@@ -2400,7 +2546,7 @@ extension Strings {
         waitingForYou: "Ждёт вас",
         resumeRewrites: "Возобновление перепишет %@ токенов",
         waitingMark: "Метка в строке меню, когда Claude ждёт",
-        autoCompact: "Сжимать, пока кэш не остыл",
+        beforeExpiry: "Пока кэш не остыл",
         autoCompactNote: "Запускает здесь /compact, когда сессия простаивает и кэшу осталось %d минут. Сжатие отбрасывает детали, и его нельзя отменить.",
         autoCompactNeedsPlugin: "В этой сессии пока недоступно: перезапустите её, чтобы она загрузила текущий плагин CacheCue.",
         autoCompactDone: "Сжато за вас в %@",
@@ -2420,7 +2566,17 @@ extension Strings {
         settings: "Настройки",
         settingsGeneral: "Основные",
         settingsSessions: "Сессии",
-        settingsNotifications: "Уведомления")
+        settingsNotifications: "Уведомления",
+        choiceLeave: "Ничего не делать",
+        choiceWarm: "Держать тёплым",
+        choiceCompact: "Сжать",
+        warmNote: "Перечитывает кэш однострочным запросом, когда сессия простаивает и осталось %d минут, не больше %d раз подряд. В разговор ничего не добавляется.",
+        warmDone: "Кэш подогрет в %@ · %d из %d",
+        warmFailed: "Не удалось удержать кэш тёплым.",
+        claudeCodeCompacts: "Claude Code сам сожмёт эту сессию примерно в %@. Чтобы выбирать здесь, выключите Idle compaction в /config.",
+        expiryCosts: "Вернуться к остывшему %@ · сжать ≈%@ · тёплым 1 ч %@",
+        compactInstructions: "При сжатии просить сводку сохранить",
+        compactInstructionsNote: "Отправляется вместе со сжатиями, которые CacheCue запускает за вас. Оставьте пустым, чтобы использовать сводку самого Claude Code.")
 
     static let tr = Strings(
         fiveHourTitle: "5 Saatlik Limit", sevenDayTitle: "7 Günlük Limit", used: "Kullanıldı", noReading: "Henüz veri yok",
@@ -2548,7 +2704,7 @@ extension Strings {
         waitingForYou: "Seni bekliyor",
         resumeRewrites: "Devam etmek %@ token yeniden yazar",
         waitingMark: "Claude beklerken menü çubuğunda işaretle",
-        autoCompact: "Önbellek soğumadan sıkıştır",
+        beforeExpiry: "Önbellek soğumadan önce",
         autoCompactNote: "Bu oturum boştayken ve önbelleğin %d dakikası kaldığında burada /compact çalıştırır. Sıkıştırma ayrıntıları atar ve geri alınamaz.",
         autoCompactNeedsPlugin: "Bu oturumda henüz hazır değil: güncel CacheCue eklentisini yüklemesi için oturumu yeniden başlat.",
         autoCompactDone: "%@ saatinde senin için sıkıştırıldı",
@@ -2568,7 +2724,17 @@ extension Strings {
         settings: "Ayarlar",
         settingsGeneral: "Genel",
         settingsSessions: "Oturumlar",
-        settingsNotifications: "Bildirimler")
+        settingsNotifications: "Bildirimler",
+        choiceLeave: "Hiçbir şey yapma",
+        choiceWarm: "Sıcak tut",
+        choiceCompact: "Sıkıştır",
+        warmNote: "Bu oturum boştayken ve %d dakika kaldığında önbelleği tek satırlık bir istekle yeniden okur, art arda en fazla %d kez. Konuşmaya hiçbir şey eklenmez.",
+        warmDone: "%@ itibarıyla sıcak tutuldu · %d / %d",
+        warmFailed: "Sıcak tutma tamamlanamadı.",
+        claudeCodeCompacts: "Claude Code bu oturumu yaklaşık %@ saatinde kendisi sıkıştırır. Burada seçmek için /config içinde Idle compaction'ı kapatın.",
+        expiryCosts: "Soğuyunca dönüş %@ · sıkıştırma ≈%@ · 1 sa sıcak %@",
+        compactInstructions: "Sıkıştırırken özetten korumasını iste",
+        compactInstructionsNote: "CacheCue'nun sizin için çalıştırdığı sıkıştırmalarla gönderilir. Claude Code'un kendi özeti için boş bırakın.")
 
     static let id = Strings(
         fiveHourTitle: "Batas 5 Jam", sevenDayTitle: "Batas 7 Hari", used: "Terpakai", noReading: "Belum ada data",
@@ -2696,7 +2862,7 @@ extension Strings {
         waitingForYou: "Menunggu Anda",
         resumeRewrites: "Melanjutkan menulis ulang %@ token",
         waitingMark: "Tandai di bilah menu saat Claude menunggu",
-        autoCompact: "Padatkan sebelum cache dingin",
+        beforeExpiry: "Sebelum cache dingin",
         autoCompactNote: "Menjalankan /compact di sini saat sesi ini diam dan cache tersisa %d menit. Pemadatan membuang detail dan tidak bisa dibatalkan.",
         autoCompactNeedsPlugin: "Belum siap di sesi ini: mulai ulang agar memuat plugin CacheCue terbaru.",
         autoCompactDone: "Dipadatkan untuk Anda pukul %@",
@@ -2716,7 +2882,17 @@ extension Strings {
         settings: "Pengaturan",
         settingsGeneral: "Umum",
         settingsSessions: "Sesi",
-        settingsNotifications: "Notifikasi")
+        settingsNotifications: "Notifikasi",
+        choiceLeave: "Biarkan",
+        choiceWarm: "Jaga hangat",
+        choiceCompact: "Padatkan",
+        warmNote: "Membaca ulang cache dengan permintaan satu baris saat sesi ini diam dan tersisa %d menit, paling banyak %d kali berturut-turut. Tidak ada yang ditambahkan ke percakapan.",
+        warmDone: "Dijaga hangat pukul %@ · %d dari %d",
+        warmFailed: "Menjaga cache tetap hangat tidak berhasil.",
+        claudeCodeCompacts: "Claude Code akan memadatkan sesi ini sendiri sekitar pukul %@. Untuk memilih di sini, matikan Idle compaction di /config.",
+        expiryCosts: "Kembali dingin %@ · padatkan ≈%@ · hangat 1 jam %@",
+        compactInstructions: "Saat memadatkan, minta ringkasan menyimpan",
+        compactInstructionsNote: "Dikirim bersama pemadatan yang dijalankan CacheCue untuk Anda. Kosongkan untuk memakai ringkasan Claude Code sendiri.")
 
     static let vi = Strings(
         fiveHourTitle: "Giới hạn 5 giờ", sevenDayTitle: "Giới hạn 7 ngày", used: "Đã dùng", noReading: "Chưa có số liệu",
@@ -2844,7 +3020,7 @@ extension Strings {
         waitingForYou: "Đang chờ bạn",
         resumeRewrites: "Tiếp tục sẽ ghi lại %@ token",
         waitingMark: "Đánh dấu trên thanh menu khi Claude chờ bạn",
-        autoCompact: "Nén trước khi cache nguội",
+        beforeExpiry: "Trước khi cache nguội",
         autoCompactNote: "Chạy /compact tại đây khi phiên này rảnh và cache còn %d phút. Nén sẽ bỏ bớt chi tiết và không thể hoàn tác.",
         autoCompactNeedsPlugin: "Chưa sẵn sàng trong phiên này: hãy khởi động lại để phiên tải plugin CacheCue hiện tại.",
         autoCompactDone: "Đã nén giúp bạn lúc %@",
@@ -2864,7 +3040,17 @@ extension Strings {
         settings: "Cài đặt",
         settingsGeneral: "Chung",
         settingsSessions: "Phiên",
-        settingsNotifications: "Thông báo")
+        settingsNotifications: "Thông báo",
+        choiceLeave: "Để yên",
+        choiceWarm: "Giữ ấm",
+        choiceCompact: "Nén",
+        warmNote: "Đọc lại cache bằng một yêu cầu một dòng khi phiên này rảnh và còn %d phút, tối đa %d lần liên tiếp. Không có gì được thêm vào cuộc trò chuyện.",
+        warmDone: "Đã giữ ấm lúc %@ · %d/%d",
+        warmFailed: "Giữ ấm không thành công.",
+        claudeCodeCompacts: "Claude Code sẽ tự nén phiên này vào khoảng %@. Muốn chọn ở đây, hãy tắt Idle compaction trong /config.",
+        expiryCosts: "Quay lại khi nguội %@ · nén ≈%@ · giữ ấm 1 giờ %@",
+        compactInstructions: "Khi nén, yêu cầu bản tóm tắt giữ lại",
+        compactInstructionsNote: "Được gửi kèm các lần nén CacheCue chạy thay bạn. Để trống để dùng bản tóm tắt của chính Claude Code.")
 
     static let th = Strings(
         fiveHourTitle: "โควตา 5 ชั่วโมง", sevenDayTitle: "โควตา 7 วัน", used: "ใช้ไป", noReading: "ยังไม่มีข้อมูล",
@@ -2992,7 +3178,7 @@ extension Strings {
         waitingForYou: "รอคุณตอบ",
         resumeRewrites: "กลับมาใช้ต่อจะต้องเขียนใหม่ %@ โทเค็น",
         waitingMark: "ทำเครื่องหมายบนแถบเมนูเมื่อ Claude รอคุณอยู่",
-        autoCompact: "บีบอัดก่อนแคชจะเย็น",
+        beforeExpiry: "ก่อนแคชจะเย็น",
         autoCompactNote: "รัน /compact ที่นี่เมื่อเซสชันนี้ว่างและแคชเหลือ %d นาที การบีบอัดจะทิ้งรายละเอียดและย้อนกลับไม่ได้",
         autoCompactNeedsPlugin: "เซสชันนี้ยังไม่พร้อม: เริ่มเซสชันใหม่เพื่อให้โหลดปลั๊กอิน CacheCue ปัจจุบัน",
         autoCompactDone: "บีบอัดให้คุณแล้วเมื่อ %@",
@@ -3012,7 +3198,17 @@ extension Strings {
         settings: "การตั้งค่า",
         settingsGeneral: "ทั่วไป",
         settingsSessions: "เซสชัน",
-        settingsNotifications: "การแจ้งเตือน")
+        settingsNotifications: "การแจ้งเตือน",
+        choiceLeave: "ปล่อยไว้",
+        choiceWarm: "รักษาความอุ่น",
+        choiceCompact: "บีบอัด",
+        warmNote: "อ่านแคชซ้ำด้วยคำขอบรรทัดเดียวเมื่อเซสชันนี้ว่างและเหลือ %d นาที ติดต่อกันได้สูงสุด %d ครั้ง ไม่มีอะไรถูกเพิ่มลงในบทสนทนา",
+        warmDone: "รักษาความอุ่นเมื่อ %@ · ครั้งที่ %d จาก %d",
+        warmFailed: "การรักษาความอุ่นไม่สำเร็จ",
+        claudeCodeCompacts: "Claude Code จะบีบอัดเซสชันนี้เองราว %@ หากต้องการเลือกที่นี่ ให้ปิด Idle compaction ใน /config",
+        expiryCosts: "กลับมาเมื่อแคชเย็น %@ · บีบอัด ≈%@ · อุ่นไว้ 1 ชม. %@",
+        compactInstructions: "เมื่อบีบอัด ให้สรุปเก็บไว้",
+        compactInstructionsNote: "ส่งไปพร้อมการบีบอัดที่ CacheCue ทำแทนคุณ เว้นว่างไว้เพื่อใช้สรุปของ Claude Code เอง")
 
     static let hi = Strings(
         fiveHourTitle: "5 घंटे की सीमा", sevenDayTitle: "7 दिन की सीमा", used: "उपयोग", noReading: "अभी कोई डेटा नहीं",
@@ -3140,7 +3336,7 @@ extension Strings {
         waitingForYou: "आपकी प्रतीक्षा में",
         resumeRewrites: "फिर शुरू करने पर %@ टोकन दोबारा लिखे जाएँगे",
         waitingMark: "Claude के इंतज़ार करने पर मेन्यू बार में चिह्न",
-        autoCompact: "कैश ठंडा होने से पहले कॉम्पैक्ट करें",
+        beforeExpiry: "कैश ठंडा होने से पहले",
         autoCompactNote: "जब यह सत्र निष्क्रिय हो और कैश के %d मिनट बचे हों, तब यहाँ /compact चलाता है। कॉम्पैक्ट करने से ब्योरे हट जाते हैं और इसे वापस नहीं किया जा सकता।",
         autoCompactNeedsPlugin: "इस सत्र में अभी तैयार नहीं: इसे दोबारा शुरू करें ताकि यह मौजूदा CacheCue प्लगइन लोड करे।",
         autoCompactDone: "%@ पर आपके लिए कॉम्पैक्ट किया गया",
@@ -3160,7 +3356,17 @@ extension Strings {
         settings: "सेटिंग्स",
         settingsGeneral: "सामान्य",
         settingsSessions: "सत्र",
-        settingsNotifications: "सूचनाएँ")
+        settingsNotifications: "सूचनाएँ",
+        choiceLeave: "कुछ न करें",
+        choiceWarm: "गर्म रखें",
+        choiceCompact: "कॉम्पैक्ट करें",
+        warmNote: "जब यह सत्र निष्क्रिय हो और %d मिनट बचे हों, तो एक पंक्ति के अनुरोध से कैश दोबारा पढ़ता है, लगातार अधिकतम %d बार। बातचीत में कुछ नहीं जुड़ता।",
+        warmDone: "%@ पर गर्म रखा · %d/%d",
+        warmFailed: "गर्म रखना पूरा नहीं हुआ।",
+        claudeCodeCompacts: "Claude Code इस सत्र को लगभग %@ पर खुद कॉम्पैक्ट करेगा। यहाँ चुनने के लिए /config में Idle compaction बंद करें।",
+        expiryCosts: "ठंडा होने पर लौटना %@ · कॉम्पैक्ट ≈%@ · 1 घंटा गर्म %@",
+        compactInstructions: "कॉम्पैक्ट करते समय सारांश से यह रखने को कहें",
+        compactInstructionsNote: "CacheCue आपके लिए जो कॉम्पैक्ट चलाता है, उनके साथ भेजा जाता है। Claude Code के अपने सारांश के लिए खाली छोड़ें।")
 
     static let ar = Strings(
         fiveHourTitle: "حد 5 ساعات", sevenDayTitle: "حد 7 أيام", used: "المستخدم", noReading: "لا توجد قراءة بعد",
@@ -3288,7 +3494,7 @@ extension Strings {
         waitingForYou: "بانتظارك",
         resumeRewrites: "الاستئناف سيعيد كتابة %@ توكن",
         waitingMark: "ضع علامة في شريط القوائم عندما ينتظرك Claude",
-        autoCompact: "اضغط قبل أن يبرد الكاش",
+        beforeExpiry: "قبل أن يبرد الكاش",
         autoCompactNote: "يشغّل /compact هنا عندما تكون هذه الجلسة خاملة ويتبقى من الكاش %d دقائق. الضغط يحذف تفاصيل ولا يمكن التراجع عنه.",
         autoCompactNeedsPlugin: "غير جاهز في هذه الجلسة بعد: أعد تشغيلها لتحمّل إضافة CacheCue الحالية.",
         autoCompactDone: "ضُغطت لك في %@",
@@ -3308,5 +3514,15 @@ extension Strings {
         settings: "الإعدادات",
         settingsGeneral: "عام",
         settingsSessions: "الجلسات",
-        settingsNotifications: "الإشعارات")
+        settingsNotifications: "الإشعارات",
+        choiceLeave: "اتركه",
+        choiceWarm: "أبقه دافئًا",
+        choiceCompact: "اضغط",
+        warmNote: "يعيد قراءة الكاش بطلب من سطر واحد عندما تكون هذه الجلسة خاملة ويتبقى %d دقائق، حتى %d مرات متتالية. لا يُضاف شيء إلى المحادثة.",
+        warmDone: "أُبقي دافئًا عند %@ · %d من %d",
+        warmFailed: "لم يكتمل إبقاء الكاش دافئًا.",
+        claudeCodeCompacts: "سيضغط Claude Code هذه الجلسة بنفسه نحو %@. لتختار هنا، أوقف Idle compaction في /config.",
+        expiryCosts: "العودة بعد أن يبرد %@ · الضغط ≈%@ · دافئ لساعة %@",
+        compactInstructions: "عند الضغط، اطلب من الملخص أن يحتفظ بـ",
+        compactInstructionsNote: "يُرسل مع عمليات الضغط التي يشغّلها CacheCue عنك. اتركه فارغًا لاستخدام ملخص Claude Code نفسه.")
 }

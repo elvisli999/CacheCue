@@ -87,7 +87,7 @@ extension Guide {
                 "Avec plusieurs sessions ouvertes, les limites sont celles de votre compte ; l’horloge et le conseil sont ceux de la session dont le cache utile va refroidir, sinon de celle qui a agi en dernier.",
                 "Un point dans le croissant : une session attend votre autorisation ou votre réponse. Dans la liste, elle porte une main levée.",
                 "Le chiffre à côté du flocon est ce qu’une session réécrit si son cache refroidit. Une session déjà froide indique ce que la reprendre réécrit.",
-                "L’interrupteur d’une carte de session laisse CacheCue lancer /compact pour vous dès que la session est inactive et qu’il reste environ 5 minutes de cache. Compacter supprime des détails et ne s’annule pas : il reste éteint tant que vous ne l’activez pas.",
+                "Chaque carte de session propose un choix pour le moment où le cache va refroidir : ne rien faire ; le garder au chaud, CacheCue relisant le cache par une requête d’une ligne environ 3 minutes avant qu’il expire, jusqu’à 3 fois de suite, sans rien ajouter à la conversation ; ou compacter, CacheCue lançant /compact pour vous dès que la session est inactive et qu’il reste environ 5 minutes de cache, ce qui supprime des détails et ne s’annule pas. Les deux coûtent un peu, donc rien n’est activé tant que vous ne l’avez pas choisi. Quand Claude Code compacte lui-même une session de terminal inactive, la carte l’indique et CacheCue n’intervient pas.",
             ],
             takeaway: "Pas de point, rien à faire. Un point : ouvrez la fenêtre et lisez la carte."),
     ]
@@ -177,7 +177,7 @@ extension Guide {
                 "Con varias sesiones abiertas, los límites son de tu cuenta; el reloj y el consejo son de la sesión cuya caché valiosa está por enfriarse o, si no hay ninguna, de la que actuó por última vez.",
                 "Un punto dentro de la medialuna: alguna sesión espera tu permiso o tu respuesta. En la lista lleva una mano levantada.",
                 "La cifra junto al copo de nieve es lo que una sesión reescribe si su caché se enfría. Una sesión ya fría indica lo que reescribe al reanudarla.",
-                "El interruptor de una tarjeta de sesión deja que CacheCue ejecute /compact por ti cuando la sesión está inactiva y quedan unos 5 minutos de caché. Compactar descarta detalles y no se puede deshacer, así que está apagado hasta que lo actives.",
+                "Cada tarjeta de sesión ofrece qué hacer cuando la caché está por enfriarse: nada; mantenerla caliente, en cuyo caso CacheCue vuelve a leer la caché con una petición de una línea unos 3 minutos antes de que caduque, hasta 3 veces seguidas, sin añadir nada a la conversación; o compactar, en cuyo caso CacheCue ejecuta /compact por ti cuando la sesión está inactiva y quedan unos 5 minutos de caché, lo que descarta detalles y no se puede deshacer. Ambas cuestan un poco, así que ninguna está activa hasta que la elijas. Cuando Claude Code compacta por sí mismo una sesión de terminal inactiva, la tarjeta lo dice y CacheCue no interviene.",
             ],
             takeaway: "Sin punto, nada que hacer. Con punto, abre la ventana y lee la tarjeta."),
     ]
@@ -267,7 +267,7 @@ extension Guide {
                 "Com várias sessões abertas, os limites são da sua conta; o relógio e o conselho são da sessão cujo cache valioso está prestes a esfriar ou, se não houver, da que agiu por último.",
                 "Um ponto dentro da lua crescente: alguma sessão espera sua permissão ou sua resposta. Na lista, ela traz uma mão levantada.",
                 "O número ao lado do floco de neve é o que uma sessão reescreve se o cache esfriar. Uma sessão já fria mostra o que retomá-la reescreve.",
-                "O interruptor em um cartão de sessão deixa o CacheCue executar /compact por você quando a sessão está ociosa e restam cerca de 5 minutos de cache. Compactar descarta detalhes e não pode ser desfeito, por isso fica desligado até você ligar.",
+                "Cada cartão de sessão oferece o que fazer quando o cache está para esfriar: nada; mantê-lo aquecido, em que o CacheCue relê o cache com uma requisição de uma linha cerca de 3 minutos antes de expirar, até 3 vezes seguidas, sem adicionar nada à conversa; ou compactar, em que o CacheCue executa /compact por você quando a sessão está ociosa e restam cerca de 5 minutos de cache, o que descarta detalhes e não pode ser desfeito. As duas custam um pouco, por isso nenhuma fica ativa até você escolher. Quando o Claude Code compacta sozinho uma sessão de terminal ociosa, o cartão avisa e o CacheCue não interfere.",
             ],
             takeaway: "Sem ponto, nada a fazer. Com ponto, abra a janela e leia o cartão."),
     ]
@@ -357,7 +357,7 @@ extension Guide {
                 "Con più sessioni aperte, i limiti sono del tuo account; l’orologio e il consiglio sono della sessione la cui cache utile sta per raffreddarsi, altrimenti di quella che ha agito per ultima.",
                 "Un punto nella falce di luna: una sessione aspetta il tuo permesso o la tua risposta. Nell’elenco ha una mano alzata.",
                 "La cifra accanto al fiocco di neve è ciò che una sessione riscrive se la cache si raffredda. Una sessione già fredda indica ciò che riprenderla riscrive.",
-                "L’interruttore su una scheda di sessione lascia che CacheCue esegua /compact per te quando la sessione è inattiva e restano circa 5 minuti di cache. Compattare elimina dettagli e non si può annullare, quindi resta spento finché non lo attivi.",
+                "Ogni scheda di sessione offre una scelta per quando la cache sta per raffreddarsi: niente; tenerla calda, con CacheCue che rilegge la cache con una richiesta di una riga circa 3 minuti prima che scada, fino a 3 volte di fila, senza aggiungere nulla alla conversazione; oppure compattare, con CacheCue che esegue /compact per te quando la sessione è inattiva e restano circa 5 minuti di cache, il che elimina dettagli e non si può annullare. Entrambe costano un po’, quindi nessuna è attiva finché non la scegli. Quando Claude Code compatta da solo una sessione di terminale inattiva, la scheda lo dice e CacheCue non interviene.",
             ],
             takeaway: "Nessun punto, niente da fare. Un punto: apri la finestra e leggi la scheda."),
     ]

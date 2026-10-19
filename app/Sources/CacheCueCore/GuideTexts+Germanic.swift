@@ -86,7 +86,7 @@ extension Guide {
                 "Bei mehreren offenen Sitzungen gelten die Limits für dein Konto; Uhr und Rat gehören zu der Sitzung, deren lohnender Cache gleich kalt wird, sonst zu der, die zuletzt etwas getan hat.",
                 "Ein Punkt in der Mondsichel: Eine Sitzung wartet auf deine Erlaubnis oder deine Antwort. In der Liste trägt sie eine erhobene Hand.",
                 "Die Zahl neben der Schneeflocke ist das, was eine Sitzung neu schreibt, wenn ihr Cache kalt wird. Eine bereits kalte Sitzung sagt, was das Fortsetzen neu schreibt.",
-                "Mit dem Schalter auf einer Sitzungskarte führt CacheCue /compact für dich aus, sobald die Sitzung ruht und noch etwa 5 Minuten Cache bleiben. Komprimieren verwirft Details und lässt sich nicht rückgängig machen; deshalb ist er aus, bis du ihn einschaltest.",
+                "Auf jeder Sitzungskarte wählst du, was kurz vor dem Kaltwerden des Caches passiert: nichts; Warmhalten, dabei liest CacheCue den Cache etwa 3 Minuten vor Ablauf mit einer einzeiligen Anfrage erneut, höchstens 3-mal hintereinander, ohne dem Gespräch etwas hinzuzufügen; oder Komprimieren, dabei führt CacheCue /compact für dich aus, sobald die Sitzung ruht und noch etwa 5 Minuten Cache bleiben, was Details verwirft und sich nicht rückgängig machen lässt. Beides kostet ein wenig, deshalb ist nichts davon an, bis du es wählst. Komprimiert Claude Code eine ruhende Terminalsitzung selbst, sagt die Karte das, und CacheCue hält sich heraus.",
             ],
             takeaway: "Kein Punkt, nichts zu tun. Ein Punkt heißt: Fenster öffnen und die Karte lesen."),
     ]
@@ -176,7 +176,7 @@ extension Guide {
                 "Met meerdere sessies open zijn de limieten van je account; de klok en het advies horen bij de sessie waarvan de waardevolle cache bijna koud is, en anders bij de sessie die het laatst iets deed.",
                 "Een stip in de maansikkel: een sessie wacht op je toestemming of je antwoord. In de lijst heeft die een opgestoken hand.",
                 "Het getal naast de sneeuwvlok is wat een sessie herschrijft als haar cache koud wordt. Een sessie die al koud is, zegt wat hervatten herschrijft.",
-                "Met de schakelaar op een sessiekaart voert CacheCue /compact voor je uit zodra de sessie stilstaat en er nog ongeveer 5 minuten cache over zijn. Compacten gooit details weg en kan niet ongedaan worden gemaakt, dus hij staat uit tot je hem aanzet.",
+                "Op elke sessiekaart kies je wat er gebeurt als de cache bijna koud wordt: niets; warm houden, waarbij CacheCue de cache zo'n 3 minuten voor het verlopen opnieuw leest met een verzoek van één regel, hoogstens 3 keer achter elkaar, zonder iets aan het gesprek toe te voegen; of compacten, waarbij CacheCue /compact voor je uitvoert zodra de sessie stilstaat en er nog ongeveer 5 minuten cache over zijn, wat details weggooit en niet ongedaan kan worden gemaakt. Beide kosten iets, dus geen van beide staat aan tot je het kiest. Compact Claude Code een stilstaande terminalsessie zelf, dan zegt de kaart dat en blijft CacheCue erbuiten.",
             ],
             takeaway: "Geen stip, niets te doen. Een stip betekent: open het venster en lees de kaart."),
     ]
@@ -266,7 +266,7 @@ extension Guide {
                 "Med flera sessioner öppna gäller gränserna ditt konto; klockan och rådet hör till den session vars värdefulla cache snart blir kall, annars till den som senast gjorde något.",
                 "En prick i månskäran: någon session väntar på ditt tillstånd eller ditt svar. I listan har den en uppräckt hand.",
                 "Siffran bredvid snöflingan är vad en session skriver om ifall dess cache blir kall. En session som redan är kall visar vad det skriver om att återuppta den.",
-                "Med reglaget på ett sessionskort kör CacheCue /compact åt dig när sessionen är inaktiv och ungefär 5 minuter av cachen återstår. Komprimering tar bort detaljer och kan inte ångras, så det är av tills du slår på det.",
+                "På varje sessionskort väljer du vad som händer när cachen snart blir kall: inget; håll varm, där CacheCue läser cachen igen med en enradig begäran ungefär 3 minuter innan den går ut, högst 3 gånger i rad, utan att något läggs till i konversationen; eller komprimera, där CacheCue kör /compact åt dig när sessionen är inaktiv och ungefär 5 minuter av cachen återstår, vilket tar bort detaljer och inte kan ångras. Båda kostar lite, så inget av dem är på förrän du väljer det. Där Claude Code själv komprimerar en inaktiv terminalsession säger kortet det, och CacheCue håller sig utanför.",
             ],
             takeaway: "Ingen prick, inget att göra. En prick betyder: öppna fönstret och läs kortet."),
     ]

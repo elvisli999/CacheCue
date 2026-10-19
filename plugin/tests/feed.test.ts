@@ -21,9 +21,9 @@ type Written = { path: string; text: string }
 const answerUsage = (
   on: On,
   figures: SessionUsage,
-  host: { surface?: 'desktop' | 'terminal'; written?: Written[] } = {},
+  host: { surface?: 'desktop' | 'terminal'; written?: Written[]; env?: Record<string, string> } = {},
 ) => {
-  mock.env(on, { HOME: '/Users/t' })
+  mock.env(on, { HOME: '/Users/t', ...host.env })
   on('session.usage', () => ({ value: figures }))
   on('session.id', () => ({ value: 's1' }))
   on('session.root', () => ({ value: '/Users/t/project' }))
@@ -139,8 +139,8 @@ test('in a terminal it says what the session is doing and leaves the figures to 
     '/Users/t/Library/Caches/CacheCue/s1.state.json',
   ])
   expect(states(written)).toEqual([
-    { session_id: 's1', state: 'running', at: START / 1000, turns: 0, accepts: ['compact'] },
-    { session_id: 's1', state: 'idle', at: (START + MINUTE) / 1000, turns: 1, accepts: ['compact'] },
+    { session_id: 's1', state: 'running', at: START / 1000, turns: 0, accepts: ['compact', 'warm', 'instructions'] },
+    { session_id: 's1', state: 'idle', at: (START + MINUTE) / 1000, turns: 1, accepts: ['compact', 'warm', 'instructions'] },
   ])
 })
 
@@ -156,6 +156,24 @@ test('an interrupted turn ends too, though it has no usage to count', async ($, 
   expect(last(written)).toMatchObject({ cache: { active: false, turn_hit: null } })
 })
 
+test('a subagent starting a turn after the main one ended leaves the session idle', async ($, on) => {
+  const clock = mock.clock(on, { now: START })
+  const written: Written[] = []
+  answerUsage(on, usage(), { written })
+  await $.session.start(START_INPUT)
+  await $.turn.start({ text: 'go', turnId: 't1' })
+  await clock.advance(MINUTE)
+  await $.turn.complete(turn())
+  const before = written.length
+
+  await clock.advance(MINUTE)
+  await $.turn.start({ text: 'look', turnId: 't2', agentId: 'a1' } as Parameters<typeof $.turn.start>[0])
+
+  expect(written).toHaveLength(before)
+  expect(states(written).at(-1)).toMatchObject({ state: 'idle' })
+  expect(last(written)).toMatchObject({ cache: { active: false } })
+})
+
 test('a prompt for permission marks the session as waiting; other notifications do not', async ($, on) => {
   mock.clock(on, { now: START })
   const written: Written[] = []
@@ -166,7 +184,7 @@ test('a prompt for permission marks the session as waiting; other notifications 
 
   await $.classic.Notification({ message: 'Claude needs your permission', notification_type: 'permission_prompt' })
   expect(states(written)).toEqual([
-    { session_id: 's1', state: 'waiting', at: START / 1000, turns: 0, accepts: ['compact'] },
+    { session_id: 's1', state: 'waiting', at: START / 1000, turns: 0, accepts: ['compact', 'warm', 'instructions'] },
   ])
 })
 
@@ -268,9 +286,10 @@ test('an account that is told no limits leaves them out, not zeros that look lik
 })
 
 // The menu bar app's request for this session, as the mod finds it on disk.
-const answerRequest = (on: On, request: Record<string, unknown> | null) => {
-  on('fs.exists', (_, e) => ({ value: request !== null && e.path.endsWith('/s1.request.json') }))
-  on('fs.read', () => ({ value: JSON.stringify(request) }))
+const answerRequest = (on: On, request: Record<string, unknown> | null | (() => Record<string, unknown> | null)) => {
+  const current = () => (typeof request === 'function' ? request() : request)
+  on('fs.exists', (_, e) => ({ value: current() !== null && e.path.endsWith('/s1.request.json') }))
+  on('fs.read', () => ({ value: JSON.stringify(current()) }))
 }
 
 const REQUEST = { v: 1, session_id: 's1', action: 'compact', id: 'r1', at: START / 1000 }
@@ -390,4 +409,136 @@ test('after a compaction the context keeps the size it reported until a turn giv
   await $.turn.complete(turn())
   await $.session.measure({ context: blank.context, rateLimits: blank.rateLimits, cost: blank.cost, changed: ['context'] })
   expect(last(snapshots())).toMatchObject({ context: { tokens: 0 } })
+})
+
+// What a fork of the conversation answers: `read` is what the cache served.
+const forked = (read: number) => ({
+  isAnswered: true as const,
+  text: 'OK',
+  usage: {
+    model: 'claude-opus-5-5',
+    input_tokens: 12,
+    output_tokens: 2,
+    cache_read_input_tokens: read,
+    cache_creation_input_tokens: 0,
+  },
+})
+
+const WARM = { v: 1, session_id: 's1', action: 'warm', id: 'w1', at: START / 1000 }
+
+test('keeps the cache warm when the app asks, without a word added to the conversation, and counts how often in a row', async ($, on) => {
+  const clock = mock.clock(on, { now: START })
+  const written: Written[] = []
+  answerUsage(on, usage(), { written })
+  let request: Record<string, unknown> | null = WARM
+  answerRequest(on, () => request)
+  const prompts: string[] = []
+  on('model.fork', (_, e) => {
+    prompts.push(e.prompt)
+
+    return { value: forked(310_000) }
+  })
+  await $.session.start(START_INPUT)
+  await clock.advance(MINUTE)
+
+  expect(prompts).toEqual(['Reply with the single word OK.'])
+  expect(states(written).at(-1)).toMatchObject({
+    warm: { at: (START + 20_000) / 1000, request: 'w1', read: 310_000, count: 1 },
+  })
+  expect(states(written).at(-1)).not.toHaveProperty('warm_failed')
+
+  // A second request is a second read in a row; the same one is not carried out twice.
+  request = { ...WARM, id: 'w2', at: (START + MINUTE) / 1000 }
+  await clock.advance(MINUTE)
+  await clock.advance(MINUTE)
+  expect(prompts).toHaveLength(2)
+  expect(states(written).at(-1)).toMatchObject({ warm: { request: 'w2', count: 2 } })
+
+  // Once the conversation moves, keeping warm counts from nothing again.
+  request = null
+  await $.turn.start({ text: 'go', turnId: 't1' })
+  await $.turn.complete(turn())
+  expect(states(written).at(-1)).not.toHaveProperty('warm')
+  // The read moved the countdown on: the next snapshot runs an hour from the turn's own write.
+  expect(last(written.filter(file => !file.path.endsWith('.state.json')))).toMatchObject({
+    cache: { expires_at: (START + 3 * MINUTE) / 1000 + 3600 },
+  })
+})
+
+test('a keep-warm read that the cache did not serve is a failure, not a warm cache', async ($, on) => {
+  const clock = mock.clock(on, { now: START })
+  const written: Written[] = []
+  answerUsage(on, usage(), { written })
+  answerRequest(on, WARM)
+  on('model.fork', () => ({ value: forked(0) }))
+  await $.session.start(START_INPUT)
+  await clock.advance(MINUTE)
+
+  expect(states(written).at(-1)).toMatchObject({ warm_failed: { request: 'w1', reason: 'cold' } })
+  expect(states(written).at(-1)).not.toHaveProperty('warm')
+})
+
+test('a compaction the app asks for passes on what the summary should keep', async ($, on) => {
+  const clock = mock.clock(on, { now: START })
+  answerUsage(on, usage())
+  answerRequest(on, { ...REQUEST, instructions: '  Keep the plan.  ' })
+  const told: (string | undefined)[] = []
+  on('session.compact', (_, e) => {
+    told.push(e.instructions)
+
+    return { messages: [{ role: 'user', text: 'summary', toolUses: [] }] }
+  })
+  await $.session.start(START_INPUT)
+  await clock.advance(MINUTE)
+
+  expect(told).toEqual(['Keep the plan.'])
+})
+
+test('where the direct call is refused, the instructions go after the command', async ($, on) => {
+  const clock = mock.clock(on, { now: START })
+  answerUsage(on, usage())
+  answerRequest(on, { ...REQUEST, instructions: 'Keep the plan.' })
+  const runs: string[] = []
+  on('session.compact', () => {
+    throw new Error('not available in a headless session yet')
+  })
+  on('command.run', (_, e) => {
+    runs.push(`${e.command} ${e.args}`)
+
+    return { text: '' }
+  })
+  await $.session.start(START_INPUT)
+  await clock.advance(MINUTE)
+
+  expect(runs).toEqual(['compact Keep the plan.'])
+})
+
+test("in a terminal it says when Claude Code's own idle compaction will take the session, and above what size", async ($, on) => {
+  mock.clock(on, { now: START })
+  const written: Written[] = []
+  answerUsage(on, usage(), { surface: 'terminal', written, env: { CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS: '150000' } })
+  answerRequest(on, null)
+  on('session.version', () => ({ value: { version: '2.1.303', base: '2.1.303', builtAt: '2026-10-18T00:00:00Z' } }))
+  let settings: Record<string, unknown> = {}
+  on('settings.read', () => ({ value: settings }))
+  await $.session.start({ ...START_INPUT, surface: 'terminal' })
+  await $.turn.start({ text: 'go', turnId: 't1' })
+  expect(states(written).at(-1)).toMatchObject({ idle_compact: { min_tokens: 150_000 } })
+
+  // Turned off in /config, it is no longer said.
+  settings = { idleCompaction: false }
+  await $.turn.complete(turn())
+  expect(states(written).at(-1)).not.toHaveProperty('idle_compact')
+})
+
+test('a Claude Code from before idle compaction, or the desktop app, says nothing of it', async ($, on) => {
+  mock.clock(on, { now: START })
+  const written: Written[] = []
+  answerUsage(on, usage(), { surface: 'terminal', written })
+  answerRequest(on, null)
+  on('session.version', () => ({ value: { version: '2.1.296', base: '2.1.296', builtAt: '2026-10-10T00:00:00Z' } }))
+  on('settings.read', () => ({ value: {} }))
+  await $.session.start({ ...START_INPUT, surface: 'terminal' })
+  await $.turn.start({ text: 'go', turnId: 't1' })
+  expect(states(written).at(-1)).not.toHaveProperty('idle_compact')
 })

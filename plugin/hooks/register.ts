@@ -19,9 +19,26 @@ const REQUEST_POLL_MS = 20 * 1000
 // A request older than this was meant for a moment that has passed.
 const REQUEST_FRESH_S = 180
 // What the mod does when the menu bar app asks; the app asks only of a session that says so.
-const ACCEPTS = ['compact']
+// `instructions`: a compaction asked for may say what the summary should keep.
+const ACCEPTS = ['compact', 'warm', 'instructions']
+// What a keep-warm request adds after the transcript. The reply is thrown away: the request
+// is only there to read the cache, which then lives another lifetime from that moment.
+const WARM_PROMPT = 'Reply with the single word OK.'
+// Claude Code compacts an idle terminal conversation itself from this release on, above this
+// many tokens unless `CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS` says otherwise.
+const IDLE_COMPACT_SINCE = [2, 1, 299]
+const IDLE_COMPACT_MIN_TOKENS = 200_000
+// A summary told more than this is being told too much.
+const INSTRUCTIONS_MAX = 600
 
 type SessionActivity = 'running' | 'idle' | 'waiting'
+
+// Something the menu bar app asked of this session.
+type Request = { id: string; action: 'compact' | 'warm'; instructions?: string }
+
+// The last time a keep-warm request read the cache, and how many in a row there have been
+// since the main conversation last moved.
+type Warm = { at: number; request: string; read: number; count: number }
 
 // The last compaction of the main conversation: its two sizes, never what was said.
 type Compaction = {
@@ -144,6 +161,10 @@ type Note = {
   turns: number
   compact: Compaction | null
   failed: { at: number; request: string } | null
+  warm: Warm | null
+  warmFailed: { at: number; request: string; reason: string } | null
+  /** Claude Code's own idle compaction will take this session above this many tokens. */
+  idleCompactMin: number | null
 }
 
 async function writeNote($: EngineInterface, note: Note): Promise<void> {
@@ -161,6 +182,9 @@ async function writeNote($: EngineInterface, note: Note): Promise<void> {
       accepts: ACCEPTS,
       ...(note.compact === null ? {} : { compact: note.compact }),
       ...(note.failed === null ? {} : { compact_failed: note.failed }),
+      ...(note.warm === null ? {} : { warm: note.warm }),
+      ...(note.warmFailed === null ? {} : { warm_failed: note.warmFailed }),
+      ...(note.idleCompactMin === null ? {} : { idle_compact: { min_tokens: note.idleCompactMin } }),
     }
     await $.fs.write(`${home}/${SNAPSHOT_DIR}/${id}.state.json`, JSON.stringify(file))
   } catch (error) {
@@ -170,7 +194,7 @@ async function writeNote($: EngineInterface, note: Note): Promise<void> {
 
 // What the menu bar app asked of this session, if it asked just now. The app decides when;
 // the rules and thresholds are its own.
-async function pendingRequest($: EngineInterface): Promise<string | null> {
+async function pendingRequest($: EngineInterface): Promise<Request | null> {
   const home = await $.env.get('HOME')
   if (home === undefined) {
     return null
@@ -184,10 +208,10 @@ async function pendingRequest($: EngineInterface): Promise<string | null> {
   if (typeof request !== 'object' || request === null) {
     return null
   }
-  const { action, session_id: sessionId, id: requestId, at } = request as Record<string, unknown>
+  const { action, session_id: sessionId, id: requestId, at, instructions } = request as Record<string, unknown>
   const now = (await $.clock.now()) / 1000
   if (
-    action !== 'compact' ||
+    (action !== 'compact' && action !== 'warm') ||
     sessionId !== id ||
     typeof requestId !== 'string' ||
     typeof at !== 'number' ||
@@ -195,8 +219,49 @@ async function pendingRequest($: EngineInterface): Promise<string | null> {
   ) {
     return null
   }
+  const told = typeof instructions === 'string' ? instructions.trim().slice(0, INSTRUCTIONS_MAX) : ''
 
-  return requestId
+  return { id: requestId, action, ...(action === 'compact' && told !== '' ? { instructions: told } : {}) }
+}
+
+// `2.1.303` or `2.1.303-dev` against a release such as [2, 1, 299].
+function isAtLeast(base: string, least: number[]): boolean {
+  const parts = (base.split('-')[0] ?? '').split('.').map(Number)
+  for (const [index, part] of least.entries()) {
+    const own = parts[index] ?? 0
+    if (Number.isNaN(own)) {
+      return false
+    }
+    if (own !== part) {
+      return own > part
+    }
+  }
+
+  return true
+}
+
+// Whether Claude Code will compact this session itself once it sits idle, and above what
+// size: only in a terminal, only from 2.1.299, and not where the settings turn it off.
+async function idleCompaction($: EngineInterface): Promise<number | null> {
+  try {
+    if ((await $.session.surface()) !== 'terminal') {
+      return null
+    }
+    const { base } = await $.session.version()
+    if (base === undefined || !isAtLeast(base, IDLE_COMPACT_SINCE)) {
+      return null
+    }
+    const settings = await $.settings.read()
+    if (settings.idleCompaction === false) {
+      return null
+    }
+    const chosen = Number(await $.env.get('CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS'))
+
+    return Number.isFinite(chosen) && chosen > 0 ? chosen : IDLE_COMPACT_MIN_TOKENS
+  } catch {
+    // An engine that cannot say is taken not to do it.
+    return null
+  }
 }
 
 // What the mod keeps between hooks. A reload starts it over, and reloads fall between turns.
@@ -210,6 +275,9 @@ type Live = {
   /** `turns` as the last compaction ended: until a turn follows, the engine has no size of its own. */
   turnsAtCompaction: number | null
   failed: { at: number; request: string } | null
+  warm: Warm | null
+  warmFailed: { at: number; request: string; reason: string } | null
+  idleCompactMin: number | null
   /** The request being carried out, and the last one taken up: each is acted on once. */
   carrying: string | null
   lastRequest: string | null
@@ -219,7 +287,15 @@ type Live = {
 function say($: EngineInterface, live: Live, state: SessionActivity): Promise<void> {
   live.activity = state
 
-  return writeNote($, { state, turns: live.turns, compact: live.compaction, failed: live.failed })
+  return writeNote($, {
+    state,
+    turns: live.turns,
+    compact: live.compaction,
+    failed: live.failed,
+    warm: live.warm,
+    warmFailed: live.warmFailed,
+    idleCompactMin: live.idleCompactMin,
+  })
 }
 
 // Keeps a compaction's two sizes. Where the engine recorded none, the context as last
@@ -242,6 +318,9 @@ async function noteCompaction(
       ...(live.carrying === null ? {} : { request: live.carrying }),
     }
     live.failed = null
+    // Keeping warm starts counting again from a conversation that moved.
+    live.warm = null
+    live.warmFailed = null
     live.turnsAtCompaction = live.turns
     // The summarising request read the cache, which keeps it for another lifetime.
     await update($, cache, stats => ({ ...stats, writeAt: at }))
@@ -258,14 +337,14 @@ async function noteCompaction(
 // Compacts the conversation because the menu bar app asked: the person turned that on
 // for this session there. `$.session.compact` is the direct call; a session with no
 // interface of its own (the desktop app's) refuses it and runs the command instead.
-async function compactFor($: EngineInterface, live: Live, request: string): Promise<void> {
+async function compactFor($: EngineInterface, live: Live, request: string, instructions?: string): Promise<void> {
   live.carrying = request
   try {
     let direct: Awaited<ReturnType<typeof $.session.compact>> | null = null
     try {
-      direct = await $.session.compact()
+      direct = await $.session.compact(instructions === undefined ? undefined : { instructions })
     } catch {
-      await $.command.run({ command: 'compact' })
+      await $.command.run({ command: 'compact', ...(instructions === undefined ? {} : { args: instructions }) })
     }
     if (direct !== null && direct.skip === undefined) {
       // The mod's own call does not come through its own hook.
@@ -282,6 +361,33 @@ async function compactFor($: EngineInterface, live: Live, request: string): Prom
   live.carrying = null
 }
 
+// Keeps the cache warm because the menu bar app asked: the person chose that for this
+// session there. A fork of the conversation as last sent reads the whole prefix from the
+// cache and is never added to the conversation; only a read that the cache served counts.
+async function warmFor($: EngineInterface, live: Live, request: string): Promise<void> {
+  live.carrying = request
+  const now = await $.clock.now()
+  const at = Math.round(now / 1000)
+  try {
+    const reply = await $.model.fork({ prompt: WARM_PROMPT })
+    const read = reply.isAnswered ? reply.usage.cache_read_input_tokens : 0
+    if (read > 0) {
+      live.warm = { at, request, read, count: (live.warm?.count ?? 0) + 1 }
+      live.warmFailed = null
+      // The read keeps the cache for another lifetime from now.
+      await update($, cache, stats => ({ ...stats, writeAt: now }))
+    } else {
+      // Answered with nothing read, the cache had already gone: the whole prefix was written again.
+      live.warmFailed = { at, request, reason: reply.isAnswered ? 'cold' : reply.reason }
+    }
+  } catch (error) {
+    live.warmFailed = { at, request, reason: 'unavailable' }
+    $.ui.log(`cachecue: keeping warm did not run: ${String(error)}`, { to: 'debug' })
+  }
+  await say($, live, live.activity)
+  live.carrying = null
+}
+
 function watchRequests($: EngineInterface, live: Live): void {
   if (live.isWatching) {
     return
@@ -295,9 +401,13 @@ function watchRequests($: EngineInterface, live: Live): void {
     void (async () => {
       try {
         const request = await pendingRequest($)
-        if (request !== null && request !== live.lastRequest) {
-          live.lastRequest = request
-          await compactFor($, live, request)
+        if (request !== null && request.id !== live.lastRequest) {
+          live.lastRequest = request.id
+          if (request.action === 'warm') {
+            await warmFor($, live, request.id)
+          } else {
+            await compactFor($, live, request.id, request.instructions)
+          }
         }
       } catch (error) {
         $.ui.log(`cachecue: request not read: ${String(error)}`, { to: 'debug' })
@@ -314,6 +424,9 @@ export const register: Register = on => {
     compaction: null,
     turnsAtCompaction: null,
     failed: null,
+    warm: null,
+    warmFailed: null,
+    idleCompactMin: null,
     carrying: null,
     lastRequest: null,
     isWatching: false,
@@ -321,6 +434,7 @@ export const register: Register = on => {
 
   on('session.start', async ($, e, next) => {
     watchRequests($, live)
+    live.idleCompactMin = await idleCompaction($)
     // What the engine holds as the mod loads is its last reading, of unknown age:
     // keep the time of one the mod itself saw arrive, when it is the same reading.
     const loaded = toFigures(await $.session.usage(), null)
@@ -368,9 +482,14 @@ export const register: Register = on => {
   })
 
   on('turn.start', async ($, e, next) => {
-    live.isWorking = true
-    await say($, live, 'running')
-    await writeSnapshot($, true)
+    // A subagent's turn is not the main conversation's: Claude Code 2.1.299 began telling
+    // plugins of those too, and only the main turn's end would ever mark the session idle.
+    // Read through a cast, since the builds before 2.1.299 do not declare the field.
+    if ((e as { agentId?: string }).agentId === undefined) {
+      live.isWorking = true
+      await say($, live, 'running')
+      await writeSnapshot($, true)
+    }
 
     return next(e)
   })
@@ -393,6 +512,10 @@ export const register: Register = on => {
         }))
         live.turns += 1
       }
+      live.warm = null
+      live.warmFailed = null
+      // `/config` may have turned Claude Code's idle compaction on or off since.
+      live.idleCompactMin = await idleCompaction($)
       live.isWorking = false
       await say($, live, 'idle')
       await writeSnapshot($, false)

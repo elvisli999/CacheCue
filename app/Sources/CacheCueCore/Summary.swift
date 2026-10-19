@@ -173,6 +173,15 @@ public struct SessionView: Equatable {
     /// The session's last compaction, and one the app asked for that did not go through.
     public var lastCompact: SessionState.Compaction? = nil
     public var compactFailed: SessionState.Failure? = nil
+    /// The plugin in this session keeps the cache warm when the app asks, and passes on what a
+    /// compaction's summary should keep.
+    public var acceptsWarm = false
+    public var acceptsInstructions = false
+    /// The last read that kept the cache warm, and one that did not.
+    public var lastWarm: SessionState.Warm? = nil
+    public var warmFailed: SessionState.WarmFailure? = nil
+    /// Claude Code compacts this terminal session itself once it sits idle, at this size and above.
+    public var idleCompactMin: Double? = nil
     /// The share of the 5-hour limit a turn of this session has been taking lately, in
     /// percent; nil with too few turns to go by.
     public var turnShare: Double? = nil
@@ -315,12 +324,18 @@ public struct Summary: Equatable {
         // The plugin's note counts while something in the session still moves.
         let lastSign = max(snapshot.updatedAt, state?.at ?? 0)
         let isNoted = state != nil && at - lastSign <= runningGrace
+        let lifetime = snapshot.cache.ttl ?? CacheState.lifetime
+        // A read that kept the cache warm starts its lifetime over; the status line is not told of it.
+        var expiresAt = snapshot.cache.expiresAt
+        if let warm = state?.warm, warm.at + lifetime > (expiresAt ?? 0) {
+            expiresAt = warm.at + lifetime
+        }
         let cache: CacheState
         if snapshot.cache.active, at - snapshot.updatedAt <= activeGrace {
             cache = .active
         } else if isNoted, state?.state == SessionState.running {
             cache = .active
-        } else if let expiresAt = snapshot.cache.expiresAt {
+        } else if let expiresAt {
             cache = expiresAt > at ? .expires(in: expiresAt - at) : .expired
         } else {
             cache = .unknown
@@ -340,9 +355,9 @@ public struct Summary: Equatable {
             output: snapshot.context.output,
             costUSD: snapshot.costUSD,
             folder: fallback,
-            lifetime: snapshot.cache.ttl ?? CacheState.lifetime,
+            lifetime: lifetime,
             lifetimeIsEstimate: snapshot.cache.ttl == nil || snapshot.source != "terminal",
-            expiresAt: snapshot.cache.expiresAt,
+            expiresAt: expiresAt,
             recacheTokens: snapshot.cache.recacheTokens,
             misses: snapshot.cache.misses ?? 0,
             missTokens: snapshot.cache.missRecacheTokens ?? 0,
@@ -357,7 +372,12 @@ public struct Summary: Equatable {
             isIdle: state?.state == SessionState.idle && cache != .active,
             acceptsCompact: state?.accepts?.contains(SessionRequest.compact) ?? false,
             lastCompact: state?.compact,
-            compactFailed: state?.compactFailed)
+            compactFailed: state?.compactFailed,
+            acceptsWarm: state?.accepts?.contains(SessionRequest.warm) ?? false,
+            acceptsInstructions: state?.accepts?.contains(SessionRequest.instructions) ?? false,
+            lastWarm: state?.warm,
+            warmFailed: state?.warmFailed,
+            idleCompactMin: state?.idleCompact?.minTokens)
     }
 
     /// Some session is waiting on the person.

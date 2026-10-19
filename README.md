@@ -7,7 +7,7 @@
 **Official website:** [elvisli.ca/cachecue](https://elvisli.ca/cachecue) · **Download:** [CacheCue.dmg](https://github.com/elvisli999/CacheCue/releases/latest/download/CacheCue.dmg) (latest release, signed and notarized)
 
 <p>
-  <img src="docs/screenshots/popover-en-light.png" width="300" alt="The CacheCue popover in light mode: a card advising to compact before the cache expires, the 5-hour and 7-day limits, and the current session's cache countdown, hit rates, cost and context size">
+  <img src="docs/screenshots/popover-en-light.png" width="300" alt="The CacheCue popover in light mode: a card advising to compact before the cache expires, the 5-hour and 7-day limits, and the current session's cache countdown, hit rates, cost and context size, and its choice of keeping the cache warm, compacting or leaving it before it goes cold">
   <img src="docs/screenshots/popover-en-dark.png" width="300" alt="The same popover in dark mode">
 </p>
 
@@ -58,7 +58,7 @@ Under the advice is what going cold would cost this session: the tokens it would
 - **Why the cache broke.** When Claude Code counts a cache miss, the session card says how many there were, how many tokens they wrote again, and what likely caused the last one: tool definitions changed, the system prompt changed, a five-minute cache ran out. Press it for the lesson on what quietly empties the cache. (Terminal sessions, Claude Code 2.1.260 or later.)
 - **Five minutes or an hour.** The countdown is measured against the cache's real lifetime, shown beside it as `5m` or `1h`, so a five-minute cache is not forever "about to expire".
 - **Which session to look at.** With several open, the one about to lose a cache worth keeping comes first, not the one you touched last. Each of the others shows what it would rewrite if it went cold. A switch in Settings goes back to always following the latest.
-- **A notification before a cache goes cold**, if you turn it on: which project, how long is left, what it would rewrite. Once per cache lifetime, never while a turn is running, never for a context too small to matter. There is a second switch for a limit reaching 80% and 95%, and for a window starting over. Both are off until you turn them on, which is also when macOS asks whether CacheCue may notify you.
+- **A notification before a cache goes cold**, if you turn it on: which project, how long is left, what it would rewrite, and buttons to **Keep warm** or **Compact** that session there and then (where its plugin can). Once per cache lifetime, never while a turn is running, never for a context too small to matter. There is a second switch for a limit reaching 80% and 95%, and for a window starting over. Both are off until you turn them on, which is also when macOS asks whether CacheCue may notify you.
 - **Where your pace leads.** Under each limit: at this rate it runs out at 14:32, or it lasts until the reset. The 7-day bar carries a mark where even use would stand.
 - **This week.** Cold starts and unexpected rebuilds, the tokens they wrote again, the average cache hit rate and the cost by project, from totals kept on your Mac.
 - **Who is waiting.** A session where Claude Code is waiting for your permission or your reply is marked with a raised hand, and a dot shows in the menu bar's crescent for as long as any session is.
@@ -66,17 +66,21 @@ Under the advice is what going cold would cost this session: the tokens it would
 - **What a turn takes of your limit.** Once a session has done a few turns, its card says roughly what share of the 5-hour limit each has been taking lately. The bigger the context, the bigger the share. It is an estimate: what the limit grew by is credited to a session only while it was the one at work, and use on your other devices can slip in.
 - **What compacting saved.** "This week" counts the compactions it saw, yours and Claude Code's own, and how many tokens they took off the context.
 
-## Compacting for you, if you ask
+## Before a cache goes cold: keep it warm, compact it, or leave it
 
-Advice is no use while you are at lunch. Each session card on a one-hour cache has a switch, **Compact before the cache goes cold**, off unless you turn it on for that session. With it on, when the session has sat idle until about five minutes of cache are left, and has at least 50k tokens of context, CacheCue's plugin runs `/compact` there. The summary is written while reading the history is still cheap, and what you come back to is a small context instead of a large cold one.
+Advice is no use while you are at lunch. Each session card on a one-hour cache has a choice, **Before the cache goes cold**, with three options, and **Leave it** until you pick another for that session. Under it, one line puts a price on each, at API list prices: coming back to a cold cache, compacting first (an estimate, taking the summary to run to about 15k tokens), and keeping the cache warm for another hour.
 
-Know what you are turning on:
+- **Keep warm.** When the session has sat idle until about three minutes of cache are left, and has at least 50k tokens of context, CacheCue's plugin sends one tiny request that replays the conversation as Claude Code last sent it, so the cache is read once and lives another hour. Nothing is added to the conversation and nothing is lost. A read costs what reading the context from the cache costs (on Opus 5.5, a twentieth of the base input price), against twice the base price to write it all again later; on a subscription it counts against your limits like any request. It keeps warm at most three times in a row, about three hours, then lets the cache go. Only a read the cache actually served counts; if the cache had already gone, the card says keeping warm did not go through.
+- **Compact.** When the session has sat idle until about five minutes of cache are left, with the same 50k minimum, the plugin runs `/compact` there. The summary is written while reading the history is still cheap, and what you come back to is a small context instead of a large cold one. Settings has a line of text sent with these compactions, saying what the summary should keep (by default file paths, decisions and the reasons for them, and unfinished work); empty it to use Claude Code's own summary. Your own `/compact` is not touched.
 
-- **Compacting throws detail away and cannot be undone.** That is why it is per session and never on by default.
-- It needs the plugin (version 0.6 or later) loaded in that session, and the session's Claude Code still running. A session that was open before the plugin updated has to be closed and opened again (in the desktop app, `/reload-plugins` does not bring the new one in); the card says so. A Mac that is asleep does nothing.
-- While the summary is being written, a minute or two on a large context, that session cannot take a message.
-- It is not offered on a five-minute cache, where any pause would trigger it.
-- It asks once per cache lifetime. Afterwards the card shows when it ran and the context before and after, or that it did not go through.
+Know what you are choosing:
+
+- **Compacting throws detail away and cannot be undone**, and keeping warm costs a little every hour it runs. That is why both are per session and never on by default.
+- **Claude Code compacts idle terminal sessions itself** from version 2.1.299: a conversation of 200k tokens or more left idle for about 54 minutes is compacted before its one-hour cache runs out. On such a session the card says when that will happen and CacheCue stays out of it, rather than act twice; to choose for yourself instead, turn off *Idle compaction* in `/config` (or set `"idleCompaction": false`). Desktop app sessions are not affected.
+- Both need the plugin (version 0.7 or later for keeping warm) loaded in that session, and the session's Claude Code still running. A session that was open before the plugin updated has to be closed and opened again (in the desktop app, `/reload-plugins` does not bring the new one in); the card says so. A Mac that is asleep does nothing.
+- While a summary is being written, a minute or two on a large context, that session cannot take a message.
+- Neither is offered on a five-minute cache, where any pause would trigger it.
+- Each is asked for once per cache lifetime. Afterwards the card shows when it ran: for a compaction, the context before and after; for keeping warm, how many times in a row so far.
 - **A spend limit instead of the two windows**, on an account behind a Claude apps gateway that sets one.
 
 ## A short course in spending fewer tokens
@@ -158,13 +162,13 @@ In the popover, a terminal connected with your own status line kept behind it sh
   The status line command and the plugin never touch the network.
 - **No credentials.** It never reads your Claude login, Keychain items or cookies.
 - **No transcripts.** It does not read your conversations. One thing to be exact about: to count compactions, the plugin listens to Claude Code's compaction event, and that event carries the conversation being compacted. The plugin hands it on untouched and keeps two numbers from the result, the token counts before and after. It does not read, store or send what was said.
-- **It acts in a session only where you told it to.** By default CacheCue only watches. The one thing it can do inside Claude Code is run `/compact`, on a session where you turned that on (see above).
+- **It acts in a session only where you told it to.** By default CacheCue only watches. The two things it can do inside Claude Code are run `/compact` and keep the cache warm, on a session where you chose one, or when you press that button on a notification (see above). Keeping warm is a request Claude Code itself sends to Anthropic, as it does for every message; CacheCue still sends nothing.
 
 - **Notifications are local.** They are off until you turn one on, and posting one sends nothing anywhere.
 
 Everything it shows is what Claude Code hands to a status line command or a plugin: token counts, rate-limit percentages, the cache's expiry time, lifetime and miss counts, the model, the session's name and its cost. It writes to four places:
 
-- `~/Library/Caches/CacheCue/`: one small JSON file of figures per session, and beside it the plugin's one-line note on what the session is doing. For a session you let it compact, the app leaves a one-line request there when the moment comes, and removes it once the plugin has answered or ten minutes have passed. Files untouched for a week are removed.
+- `~/Library/Caches/CacheCue/`: one small JSON file of figures per session, and beside it the plugin's one-line note on what the session is doing. For a session you let it compact or keep warm, the app leaves a one-line request there when the moment comes (for a compaction, with the text from Settings), and removes it once the plugin has answered or ten minutes have passed. Files untouched for a week are removed.
 - `~/Library/Application Support/CacheCue/history.json`: what the pace and the weekly ledger are worked out from. Readings of your limits, and per day: counts of cold starts, rebuilds and compactions, tokens rewritten and taken off, hit rates, and cost by project folder name; per session, a tally of turns and of what the 5-hour limit grew by during them. Sums and counts only, kept for thirty days, never sent anywhere. Delete the file and it starts over.
 - The `statusLine` entry in `~/.claude/settings.json`, when you press Connect for terminal sessions.
 - Its copy of the plugin in `~/Library/Application Support/CacheCue/marketplace/`, when you press Connect for the desktop app.
@@ -180,7 +184,7 @@ The only programs it starts are Claude Code itself, and your own status line com
 - **For scripts:** `CacheCue status --json` prints the figures (limits, pace, each session's cache state, advice and rewrite cost) for a shortcut's Run Shell Script action, a launcher or a dashboard.
 - **A gateway's spend limit** shows only if your organization routes Claude Code through a Claude apps gateway with a limit set for you; otherwise there is nothing for CacheCue to show there.
 - **The dollar figure** is Claude Code's own estimate at API list prices. On a Pro or Max subscription your usage is included in the plan, so it is not what you are billed: CacheCue labels it "API-rate value" there, and "Session cost" only when there is no subscription.
-- **Updates:** when a newer release is out, a card at the top of the popover says so; press it and the app downloads the update, checks its signature and installs it in place. The bottom of the popover has three things: **Settings**, **About** with the version you are running, and **Quit**. Settings holds every switch and choice that is the app's own (launch at login, language, appearance, the daily update check, which session comes first, the dot in the crescent, the two notifications); the About page has a button that checks there and then, along with links to the official website, the source, support and the tip page. `⌘,` opens Settings and `Esc` goes back a page. Version 1.0.0 has no updater of its own: from there, download the newer version once by hand.
+- **Updates:** when a newer release is out, a card at the top of the popover says so; press it and the app downloads the update, checks its signature and installs it in place. The bottom of the popover has three things: **Settings**, **About** with the version you are running, and **Quit**. Settings holds every switch and choice that is the app's own (launch at login, language, appearance, the daily update check, which session comes first, the dot in the crescent, what compactions should keep, the two notifications); the About page has a button that checks there and then, along with links to the official website, the source, support and the tip page. `⌘,` opens Settings and `Esc` goes back a page. Version 1.0.0 has no updater of its own: from there, download the newer version once by hand.
 - **Accessibility:** text and controls are measured against WCAG 2.2 AA contrast in light and dark, and the three levels (good, warning, critical) use fills that stay apart for people who do not see red and green as different. Inside the popover a level is not left to colour alone: the words say it, the cache clock changes shape with it, and with the system's *Differentiate without colour* on, coloured figures get a mark as well. *Increase contrast* gets a stronger palette, *Reduce motion* stops the reply badge pulsing, and VoiceOver reads the cards as sentences and the menu bar item as its figures. None of this has had a review by people who rely on these settings; reports are welcome.
 - **Languages:** the interface and the guide are in English, 简体中文, 繁體中文, 日本語, 한국어, Deutsch, Français, Español, Português, Italiano, Nederlands, Svenska, Polski, Русский, Türkçe, Bahasa Indonesia, Tiếng Việt, ไทย, हिन्दी and العربية, switchable from the popover along with light and dark appearance. The translations have not been reviewed by native speakers; corrections are welcome.
 
@@ -212,11 +216,11 @@ desktop session ─── cachecue plugin ────────────�
 any session ─────── cachecue plugin ──▶ ~/Library/Caches/CacheCue/<session>.state.json (running, waiting) ─┘
 ```
 
-For a session you let it compact, the arrow also runs the other way: the app leaves `<session>.request.json` in the same folder, and the plugin in that session reads it and runs `/compact`.
+For a session you let it compact or keep warm, the arrow also runs the other way: the app leaves `<session>.request.json` in the same folder, and the plugin in that session reads it and runs `/compact` or reads the cache once.
 
 - `app/Sources/CacheCueCore`: everything that decides what is shown (the advice rules, the price multiples, which notifications are due, when to compact for you, the pace and the weekly ledger, the guide, reading what Claude Code sends, snapshots, connecting the two sources, the update check, the 20 languages), with no UI code, and the tests that cover it.
 - `app/Sources/CacheCue`: the SwiftUI popover, the menu bar item, notifications and the command-line entry points.
-- `plugin/`: what feeds the menu bar from desktop app sessions, says what every session is doing, and compacts a session when the app asks. It draws nothing; `build-app.sh` packs it into the app.
+- `plugin/`: what feeds the menu bar from desktop app sessions, says what every session is doing, and compacts a session or keeps its cache warm when the app asks. It draws nothing; `build-app.sh` packs it into the app.
 
 ## Support the project
 

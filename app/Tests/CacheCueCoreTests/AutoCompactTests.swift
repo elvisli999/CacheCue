@@ -47,25 +47,25 @@ final class AutoCompactTests: XCTestCase {
 
     func testAnIdleSessionAboutToGoColdIsCompactedOncePerExpiry() {
         var ledger: [String: Double] = [:]
-        let first = AutoCompact.due(sessions: [session()], enabled: ["a"], ledger: &ledger)
-        XCTAssertEqual(first.map(\.id), ["a"])
+        let first = AutoCompact.due(sessions: [session()], choices: ["a": .compact], ledger: &ledger)
+        XCTAssertEqual(first.map(\.session.id), ["a"])
         XCTAssertEqual(ledger, ["a": at + 240])
-        XCTAssertTrue(AutoCompact.due(sessions: [session()], enabled: ["a"], ledger: &ledger).isEmpty)
+        XCTAssertTrue(AutoCompact.due(sessions: [session()], choices: ["a": .compact], ledger: &ledger).isEmpty)
         // A later expiry is another cache, and gets its own request.
-        XCTAssertEqual(AutoCompact.due(sessions: [session(expiresIn: 200)], enabled: ["a"], ledger: &ledger).count, 1)
+        XCTAssertEqual(AutoCompact.due(sessions: [session(expiresIn: 200)], choices: ["a": .compact], ledger: &ledger).count, 1)
         // A session no longer listed is forgotten.
-        _ = AutoCompact.due(sessions: [], enabled: ["a"], ledger: &ledger)
+        _ = AutoCompact.due(sessions: [], choices: ["a": .compact], ledger: &ledger)
         XCTAssertEqual(ledger, [:])
     }
 
     func testOnlyWhereThePersonTurnedItOnAndThePluginCanDoIt() {
-        func due(_ session: SessionView, enabled: Set<String> = ["a"]) -> Bool {
+        func due(_ session: SessionView, choices: [String: BeforeExpiry] = ["a": .compact]) -> Bool {
             var ledger: [String: Double] = [:]
-            return !AutoCompact.due(sessions: [session], enabled: enabled, ledger: &ledger).isEmpty
+            return !AutoCompact.due(sessions: [session], choices: choices, ledger: &ledger).isEmpty
         }
         XCTAssertTrue(due(session()))
-        XCTAssertFalse(due(session(), enabled: []))
-        XCTAssertFalse(due(session(), enabled: ["b"]))
+        XCTAssertFalse(due(session(), choices: [:]))
+        XCTAssertFalse(due(session(), choices: ["b": .compact]))
         // No plugin's note, or one from a plugin that does not take requests.
         XCTAssertFalse(due(session(plain: true)))
         XCTAssertFalse(due(session(state: note(accepts: nil))))
@@ -79,7 +79,7 @@ final class AutoCompactTests: XCTestCase {
     func testNotTooEarlyNotTooLateNotOnALittleContextOrAFiveMinuteCache() {
         func due(_ session: SessionView) -> Bool {
             var ledger: [String: Double] = [:]
-            return !AutoCompact.due(sessions: [session], enabled: ["a"], ledger: &ledger).isEmpty
+            return !AutoCompact.due(sessions: [session], choices: ["a": .compact], ledger: &ledger).isEmpty
         }
         XCTAssertFalse(due(session(expiresIn: 301)))
         XCTAssertTrue(due(session(expiresIn: 300)))
@@ -94,24 +94,24 @@ final class AutoCompactTests: XCTestCase {
         XCTAssertTrue(AutoCompact.isOffered(for: session()))
     }
 
-    func testWhatIsSaidUnderTheSwitch() {
+    func testWhatIsSaidUnderTheChoiceToCompact() {
         let strings = Strings.of(.en)
-        func line(_ state: SessionState?, plain: Bool = false) -> String {
-            session(state: state, plain: plain).autoCompactLine(strings, now: now, calendar: calendar)
+        func line(_ state: SessionState?, plain: Bool = false) -> String? {
+            session(state: state, plain: plain).beforeExpiryLine(strings, choice: .compact, now: now, calendar: calendar)
         }
-        XCTAssertEqual(AutoCompact.status(of: session(plain: true)), .needsPlugin)
+        XCTAssertEqual(AutoCompact.status(of: session(plain: true), choice: .compact), .needsPlugin)
         XCTAssertEqual(line(nil, plain: true), strings.autoCompactNeedsPlugin)
         XCTAssertEqual(
             line(note()),
             "Runs /compact here once this session sits idle with 5 minutes of cache left. Compacting drops detail and cannot be undone.")
         // One the person ran themselves is not the app's doing.
-        XCTAssertEqual(AutoCompact.status(of: session(state: note(compact: .init(at: at - 60, before: 310_000, after: 24_000, trigger: "manual")))), .armed)
+        XCTAssertEqual(AutoCompact.status(of: session(state: note(compact: .init(at: at - 60, before: 310_000, after: 24_000, trigger: "manual"))), choice: .compact), .armed)
         let done = SessionState.Compaction(at: at - 3600, before: 310_000, after: 24_000, trigger: "plugin", request: "r1")
         XCTAssertEqual(line(note(compact: done)), "Compacted for you at 19:20 · 310.0k → 24.0k")
         XCTAssertEqual(line(note(compact: .init(at: at - 3600, trigger: "manual", request: "r1"))), "Compacted for you at 19:20")
         // A failure since the last compaction is what stands.
         XCTAssertEqual(line(note(compact: done, failed: .init(at: at - 60, request: "r2"))), strings.autoCompactFailed)
-        XCTAssertEqual(AutoCompact.status(of: session(state: note(compact: done, failed: .init(at: at - 7200, request: "r0")))), .done(done))
+        XCTAssertEqual(AutoCompact.status(of: session(state: note(compact: done, failed: .init(at: at - 7200, request: "r0"))), choice: .compact), .done(done))
     }
 
     // MARK: The files
@@ -270,7 +270,7 @@ final class AutoCompactTests: XCTestCase {
         XCTAssertFalse(summary.sessions.contains { $0.id == "a" })
         XCTAssertEqual(summary.unlisted.map(\.id), ["a"])
         var ledger: [String: Double] = [:]
-        XCTAssertEqual(AutoCompact.due(sessions: summary.every, enabled: ["a"], ledger: &ledger).map(\.id), ["a"])
+        XCTAssertEqual(AutoCompact.due(sessions: summary.every, choices: ["a": .compact], ledger: &ledger).map(\.session.id), ["a"])
         var alerts = AlertLedger()
         let due = Alerts.due(
             sessions: summary.every, limits: [:], now: now, lead: 600, cache: true, quota: false, ledger: &alerts)

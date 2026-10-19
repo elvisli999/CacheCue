@@ -86,7 +86,7 @@ extension Guide {
                 "Przy kilku otwartych sesjach limity dotyczą twojego konta; zegar i rada należą do sesji, której cenna pamięć podręczna zaraz wystygnie, a jeśli takiej nie ma, do tej, która ostatnio coś zrobiła.",
                 "Kropka w sierpie księżyca: któraś sesja czeka na twoją zgodę lub odpowiedź. Na liście ma podniesioną dłoń.",
                 "Liczba obok płatka śniegu to tyle, ile sesja przepisze, gdy jej pamięć podręczna wystygnie. Sesja już zimna pokazuje, ile przepisze jej wznowienie.",
-                "Przełącznik na karcie sesji pozwala CacheCue uruchomić /compact za ciebie, gdy sesja jest bezczynna i zostało około 5 minut pamięci podręcznej. Kompaktowanie usuwa szczegóły i nie da się go cofnąć, więc jest wyłączony, dopóki go nie włączysz.",
+                "Na każdej karcie sesji wybierasz, co zrobić, gdy pamięć podręczna ma wystygnąć: nic; utrzymywać ciepłą, wtedy CacheCue około 3 minut przed wygaśnięciem ponownie odczytuje pamięć jednowierszowym zapytaniem, najwyżej 3 razy z rzędu, nic nie dodając do rozmowy; albo kompaktować, wtedy CacheCue uruchamia /compact za ciebie, gdy sesja jest bezczynna i zostało około 5 minut pamięci podręcznej, co usuwa szczegóły i nie da się cofnąć. Obie opcje trochę kosztują, więc żadna nie jest włączona, dopóki jej nie wybierzesz. Gdy Claude Code sam kompaktuje bezczynną sesję w terminalu, karta to mówi, a CacheCue się nie wtrąca.",
             ],
             takeaway: "Nie ma kropki, nie ma nic do zrobienia. Kropka znaczy: otwórz okno i przeczytaj kartę."),
     ]
@@ -176,7 +176,7 @@ extension Guide {
                 "Когда открыто несколько сессий, лимиты общие для аккаунта; часы и совет относятся к сессии, чей ценный кэш вот-вот остынет, а если такой нет, к той, что была активна последней.",
                 "Точка внутри полумесяца: какая-то сессия ждёт вашего разрешения или ответа. В списке у неё значок поднятой руки.",
                 "Число рядом со снежинкой показывает, сколько сессия перепишет, если её кэш остынет. Уже остывшая сессия показывает, сколько перепишет её возобновление.",
-                "Переключатель на карточке сессии позволяет CacheCue запустить /compact за вас, когда сессия простаивает и кэшу осталось около 5 минут. Сжатие отбрасывает детали, и его нельзя отменить, поэтому он выключен, пока вы его не включите.",
+                "На карточке сессии можно выбрать, что делать, когда кэш вот-вот остынет: ничего; держать тёплым — CacheCue примерно за 3 минуты до истечения перечитывает кэш однострочным запросом, не больше 3 раз подряд, ничего не добавляя в разговор; или сжать — CacheCue запускает /compact за вас, когда сессия простаивает и кэшу осталось около 5 минут; сжатие отбрасывает детали, и его нельзя отменить. Оба варианта немного стоят, поэтому ни один не включён, пока вы его не выберете. Если Claude Code сам сжимает простаивающую сессию в терминале, карточка так и пишет, а CacheCue не вмешивается.",
             ],
             takeaway: "Нет точки — делать нечего. Есть точка — откройте окно и прочитайте карточку."),
     ]
@@ -266,7 +266,7 @@ extension Guide {
                 "Birden çok oturum açıkken limitler hesabına aittir; saat ve öneri, değerli önbelleği soğumak üzere olan oturuma, öyle bir oturum yoksa en son işlem yapana aittir.",
                 "Hilalin içindeki nokta: bir oturum iznini veya yanıtını bekliyor. Listede o oturumda kalkmış bir el simgesi bulunur.",
                 "Kar tanesinin yanındaki sayı, önbelleği soğursa oturumun yeniden yazacağı miktardır. Zaten soğumuş bir oturum, devam etmenin neyi yeniden yazacağını gösterir.",
-                "Oturum kartındaki anahtar, oturum boştayken ve önbelleğin yaklaşık 5 dakikası kaldığında CacheCue'nun senin yerine /compact çalıştırmasını sağlar. Sıkıştırma ayrıntıları atar ve geri alınamaz; bu yüzden sen açana kadar kapalıdır.",
+                "Her oturum kartında önbellek soğumak üzereyken ne olacağını seçersin: hiçbir şey; sıcak tutmak, yani CacheCue süre dolmadan yaklaşık 3 dakika önce önbelleği tek satırlık bir istekle yeniden okur, art arda en fazla 3 kez, konuşmaya hiçbir şey eklemeden; ya da sıkıştırmak, yani oturum boştayken ve önbelleğin yaklaşık 5 dakikası kaldığında CacheCue senin yerine /compact çalıştırır; bu ayrıntıları atar ve geri alınamaz. İkisinin de küçük bir maliyeti var, bu yüzden sen seçene kadar hiçbiri açık değildir. Claude Code boştaki bir terminal oturumunu kendisi sıkıştırıyorsa kart bunu söyler ve CacheCue karışmaz.",
             ],
             takeaway: "Nokta yoksa yapılacak bir şey yok. Nokta varsa pencereyi açın ve kartı okuyun."),
     ]

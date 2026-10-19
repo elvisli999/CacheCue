@@ -19,6 +19,9 @@ public enum Pricing {
     /// A cache read is a tenth of the base price on every model the table does not single out.
     public static let standardRead = 0.1
 
+    /// Output costs five times the base input price on every model in the table.
+    public static let outputMultiplier = 5.0
+
     private static let table: [(marker: String, base: Double, read: Double)] = [
         ("fable-5-1", 10, 0.025), ("mythos-5-1", 10, 0.025),
         ("fable-5", 10, 0.1), ("mythos-5", 10, 0.1),
@@ -83,5 +86,33 @@ public struct ColdCost: Equatable {
 
     public static func dollars(_ value: Double) -> String {
         String(format: value < 10 ? "$%.2f" : "$%.1f", value)
+    }
+}
+
+/// What each way of meeting a cache's expiry costs at list prices: coming back to it cold,
+/// compacting it first, or keeping it warm another lifetime.
+public struct ExpiryCosts: Equatable {
+    /// What a compaction's summary is taken to run to, in tokens: the compaction figure is an
+    /// estimate, the other two are not.
+    public static let summaryTokens = 15_000.0
+
+    /// The next request writes the whole prompt again.
+    public var coldUSD: Double
+    /// The summarising request reads the prompt and writes the summary; coming back writes the
+    /// summary into the cache.
+    public var compactUSD: Double
+    /// One read of the prompt from the cache.
+    public var warmUSD: Double
+
+    /// Nil for a model without a known price.
+    public init?(tokens: Double, modelID: String?, lifetime: TimeInterval) {
+        let rate = Pricing.rate(modelID: modelID, promptTokens: tokens)
+        guard let base = rate.base else { return nil }
+        let perToken = base / 1_000_000
+        let write = Pricing.writeMultiplier(lifetime: lifetime)
+        let summary = min(ExpiryCosts.summaryTokens, tokens)
+        coldUSD = tokens * perToken * write
+        warmUSD = tokens * perToken * rate.read
+        compactUSD = warmUSD + summary * perToken * (Pricing.outputMultiplier + write)
     }
 }

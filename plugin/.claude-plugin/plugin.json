@@ -1,7 +1,7 @@
 {
   "name": "cachecue",
-  "version": "0.6.1",
-  "description": "Feeds the CacheCue menu bar app: from Claude desktop app sessions, cache hit rate and expiry, limits, context size and session cost; from every session, whether a turn is running or Claude Code is waiting for you, and how much each compaction took off the context. Compacts a session before its cache goes cold only where you turned that on in the menu bar app. Draws nothing in Claude Code itself.",
+  "version": "0.7.0",
+  "description": "Feeds the CacheCue menu bar app: from Claude desktop app sessions, cache hit rate and expiry, limits, context size and session cost; from every session, whether a turn is running or Claude Code is waiting for you, and how much each compaction took off the context. Before a session's cache goes cold, keeps it warm or compacts it only where you chose that in the menu bar app. Draws nothing in Claude Code itself.",
   "types": "./types/index.d.ts",
   "author": {
     "name": "Elvis Li"

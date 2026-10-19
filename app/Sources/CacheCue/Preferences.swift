@@ -20,8 +20,13 @@ enum Preferences {
     static let waitingMarkKey = "waitingMark"
     /// The ids of the sessions the person lets the app compact before their cache goes cold.
     static let autoCompactKey = "autoCompactSessions"
-    /// By session: the cache expiry a compaction was last asked for.
+    /// The ids of the sessions the person lets the app keep warm before their cache goes cold.
+    static let keepWarmKey = "keepWarmSessions"
+    /// By session: the cache expiry a compaction or a keep-warm read was last asked for.
     static let autoCompactLedgerKey = "autoCompactLedger"
+    /// What a compaction the app asks for tells the summary to keep; empty leaves Claude Code's own prompt.
+    static let compactInstructionsKey = "compactInstructions"
+    static let defaultCompactInstructions = "Keep file paths, decisions and the reasons for them, and unfinished work."
 
     static var showsWaitingMark: Bool {
         UserDefaults.standard.object(forKey: waitingMarkKey) as? Bool ?? true
@@ -29,6 +34,16 @@ enum Preferences {
 
     static var autoCompactSessions: Set<String> {
         Set(UserDefaults.standard.stringArray(forKey: autoCompactKey) ?? [])
+    }
+
+    static var keepWarmSessions: Set<String> {
+        Set(UserDefaults.standard.stringArray(forKey: keepWarmKey) ?? [])
+    }
+
+    static var compactInstructions: String? {
+        let text = (UserDefaults.standard.string(forKey: compactInstructionsKey) ?? defaultCompactInstructions)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return text.isEmpty ? nil : text
     }
 
     static var followsUrgent: Bool {

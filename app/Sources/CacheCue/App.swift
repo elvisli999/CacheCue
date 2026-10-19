@@ -32,12 +32,27 @@ final class UsageModel: ObservableObject {
         summary = summarize(Date())
     }
 
-    /// The sessions the person lets the app compact before their cache goes cold.
+    /// The sessions the person lets the app compact, or keep warm, before their cache goes cold.
     @Published private(set) var autoCompacted = Preferences.autoCompactSessions
+    @Published private(set) var keptWarm = Preferences.keepWarmSessions
 
-    func setAutoCompact(_ sessionID: String, _ isOn: Bool) {
-        if isOn { autoCompacted.insert(sessionID) } else { autoCompacted.remove(sessionID) }
+    /// What the person chose for each session that has a choice other than leaving it.
+    var choices: [String: BeforeExpiry] {
+        var choices: [String: BeforeExpiry] = [:]
+        for id in keptWarm { choices[id] = .warm }
+        for id in autoCompacted { choices[id] = .compact }
+        return choices
+    }
+
+    func setChoice(_ sessionID: String, _ choice: BeforeExpiry) {
+        if choice == .compact { autoCompacted.insert(sessionID) } else { autoCompacted.remove(sessionID) }
+        if choice == .warm { keptWarm.insert(sessionID) } else { keptWarm.remove(sessionID) }
+        saveChoices()
+    }
+
+    private func saveChoices() {
         defaults.set(autoCompacted.sorted(), forKey: Preferences.autoCompactKey)
+        defaults.set(keptWarm.sorted(), forKey: Preferences.keepWarmKey)
     }
 
     private func summarize(_ now: Date) -> Summary {
@@ -66,8 +81,9 @@ final class UsageModel: ObservableObject {
         summary = Summary(snapshots: [], now: Date())
         summary = summarize(Date())
         week = history.week(now: Date())
-        Notifier.shared.start()
+        Notifier.shared.start(strings: .of(Language.resolve(choice: defaults.string(forKey: Preferences.languageKey))))
         Notifier.shared.showSession = { [weak self] id in self?.pin(id) }
+        Notifier.shared.act = { [weak self] id, action in self?.send(action, to: id, at: Date()) }
         // .common keeps the countdown moving while the popover is open.
         let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refresh() }
@@ -100,35 +116,47 @@ final class UsageModel: ObservableObject {
             }
         }
         announce(now)
-        if isReading { compactWhereAsked(now) }
+        if isReading { actWhereAsked(now) }
     }
 
-    /// Leaves a request for each session whose cache is about to go cold, of those the
-    /// person turned automatic compacting on for; the plugin in the session carries it out.
-    private func compactWhereAsked(_ now: Date) {
+    /// Leaves a request for each session whose cache is about to go cold, of those the person
+    /// chose keeping warm or compacting for; the plugin in the session carries it out.
+    private func actWhereAsked(_ now: Date) {
         // A session no longer on record is no longer asked about.
         let known = Set(snapshots.map(\.sessionID))
-        if !autoCompacted.isSubset(of: known) {
+        if !autoCompacted.isSubset(of: known) || !keptWarm.isSubset(of: known) {
             autoCompacted.formIntersection(known)
-            defaults.set(autoCompacted.sorted(), forKey: Preferences.autoCompactKey)
+            keptWarm.formIntersection(known)
+            saveChoices()
+        }
+        let answered = states.values.flatMap {
+            [$0.compact?.request, $0.compactFailed?.request, $0.warm?.request, $0.warmFailed?.request]
         }
         SnapshotStore.clearRequests(
-            in: directory, answered: Set(states.values.flatMap { [$0.compact?.request, $0.compactFailed?.request] }.compactMap { $0 }),
-            now: now, life: AutoCompact.requestLife)
-        guard !autoCompacted.isEmpty else { return }
+            in: directory, answered: Set(answered.compactMap { $0 }), now: now, life: AutoCompact.requestLife)
+        let choices = self.choices
+        guard !choices.isEmpty else { return }
         let stored = defaults.dictionary(forKey: Preferences.autoCompactLedgerKey) as? [String: Double] ?? [:]
         var ledger = stored
-        let due = AutoCompact.due(sessions: summary.every, enabled: autoCompacted, ledger: &ledger)
+        let due = AutoCompact.due(sessions: summary.every, choices: choices, ledger: &ledger)
         if ledger != stored {
             defaults.set(ledger, forKey: Preferences.autoCompactLedgerKey)
         }
-        for session in due {
-            try? SnapshotStore.write(
-                SessionRequest(
-                    sessionID: session.id, action: SessionRequest.compact, id: UUID().uuidString,
-                    at: now.timeIntervalSince1970),
-                in: directory)
+        for item in due {
+            send(item.action, to: item.session.id, at: now)
         }
+    }
+
+    /// Asks a session's plugin to keep its cache warm or to compact it: on the person's
+    /// choice for that session, or a button they pressed on a notification.
+    func send(_ action: BeforeExpiry, to sessionID: String, at now: Date) {
+        guard action != .leave else { return }
+        try? SnapshotStore.write(
+            SessionRequest(
+                sessionID: sessionID, action: action == .warm ? SessionRequest.warm : SessionRequest.compact,
+                id: UUID().uuidString, at: now.timeIntervalSince1970,
+                instructions: action == .compact ? Preferences.compactInstructions : nil),
+            in: directory)
     }
 
     /// Posts what is due, of the notifications the person has turned on.
@@ -148,7 +176,8 @@ final class UsageModel: ObservableObject {
         guard !due.isEmpty else { return }
         let strings = Strings.of(Language.resolve(choice: defaults.string(forKey: Preferences.languageKey)))
         for alert in due {
-            Notifier.shared.post(alert, strings: strings)
+            let session = summary.every.first { $0.id == alert.sessionID }
+            Notifier.shared.post(alert, strings: strings, actions: session.map(AutoCompact.actions(for:)) ?? [])
         }
     }
 }
@@ -162,7 +191,7 @@ struct UsageBarApp: App {
         MenuBarExtra {
             PopoverView(
                 summary: model.summary, week: model.week, updater: updater, pin: model.pin,
-                autoCompacted: model.autoCompacted, setAutoCompact: model.setAutoCompact, support: support,
+                choices: model.choices, setChoice: model.setChoice, support: support,
                 isShowingSupport: support.isPresented, unreadReplies: support.unread.count)
                 .background(Material.regular)
         } label: {
@@ -293,8 +322,11 @@ enum Entry {
             Render.write(
                 summary, to: URL(fileURLWithPath: folder), dark: arguments.contains("--dark"), language: language,
                 page: page, support: support, name: name, week: history.week(now: Date()),
-                // `--auto-compact` draws the session in view with its automatic compacting turned on.
-                autoCompacted: arguments.contains("--auto-compact") ? Set(summary.current.map { [$0.id] } ?? []) : [],
+                // `--auto-compact` and `--keep-warm` draw the session in view with that chosen for it.
+                choices: summary.current.map { current in
+                    arguments.contains("--keep-warm") ? [current.id: .warm]
+                        : arguments.contains("--auto-compact") ? [current.id: .compact] : [:]
+                } ?? [:],
                 // `--unread` draws a reply from support waiting; `--contrast` the system's "Increase
                 // contrast"; `--no-color` its "Differentiate without colour".
                 unread: arguments.contains("--unread") || name == "reply" ? 1 : 0,
@@ -321,7 +353,7 @@ enum Entry {
 enum Render {
     static func write(
         _ summary: Summary, to folder: URL, dark: Bool, language: Language, page: Page, support: SupportModel? = nil,
-        name: String? = nil, week: Week = Week(), autoCompacted: Set<String> = [], unread: Int = 0,
+        name: String? = nil, week: Week = Week(), choices: [String: BeforeExpiry] = [:], unread: Int = 0,
         contrast: Bool = false, marksLevels: Bool = false
     ) {
         Palette.forcesStrong = contrast
@@ -348,7 +380,7 @@ enum Render {
             let backdrop = dark ? Color(white: 0.16) : Color(white: 0.93)
             let popover = PopoverView(
                 summary: summary, week: week, isPreview: true, previewLanguage: language, initialPage: page,
-                autoCompacted: autoCompacted, support: support,
+                choices: choices, support: support,
                 isShowingSupport: support?.isPresented ?? false, unreadReplies: unread,
                 previewsSetup: name == "setup", previewsKept: name == "kept")
                 .environment(\.forcesLevelMarks, marksLevels)
